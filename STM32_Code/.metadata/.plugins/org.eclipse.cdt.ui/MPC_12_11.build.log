@@ -1,0 +1,10 @@
+17:18:43 **** Incremental Build of configuration Debug for project MPC_12_11 ****
+make -j4 all 
+arm-none-eabi-size   MPC_12_11.elf 
+   text	   data	    bss	    dec	    hex	filename
+  16388	     20	   2604	  19012	   4a44	MPC_12_11.elf
+Finished building: default.size.stdout
+ 
+
+17:18:44 Build Finished. 0 errors, 0 warnings. (took 399ms)
+

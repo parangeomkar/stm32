@@ -128,7 +128,7 @@ int v1,v2;
 void measure(){
 //	if(RX_data[0] == 202){
 //		RX_data[0] = 0;
-		HAL_UART_Transmit(&huart2, pData, 9, 10);
+	HAL_UART_Transmit(&huart2, pData, 9, 10);
 //	}
 
 	HAL_ADC_Start_DMA(&hadc2, value2, 2);

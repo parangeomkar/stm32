@@ -83,7 +83,7 @@ static void MX_NVIC_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-uint8_t RX_data[1];
+uint8_t RX_data[6];
 uint8_t TX_data[1];
 
 /* USER CODE END 0 */
@@ -142,7 +142,7 @@ int main(void)
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_11, 1);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, 1);
 
-	HAL_UART_Receive_DMA(&huart2, RX_data, 1);
+	HAL_UART_Receive_DMA(&huart2, RX_data, 6);
 
   /* USER CODE END 2 */
 

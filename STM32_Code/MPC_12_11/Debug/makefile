@@ -61,8 +61,8 @@ all: main-build
 main-build: MPC_12_11.elf secondary-outputs
 
 # Tool invocations
-MPC_12_11.elf: $(OBJS) $(USER_OBJS) C:\Users\zero\Desktop\Python\STM32_Code\MPC_12_11\STM32F303RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "MPC_12_11.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\zero\Desktop\Python\STM32_Code\MPC_12_11\STM32F303RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MPC_12_11.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+MPC_12_11.elf: $(OBJS) $(USER_OBJS) C:\Users\zero\Desktop\Python\stm32\STM32_Code\MPC_12_11\STM32F303RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "MPC_12_11.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\zero\Desktop\Python\stm32\STM32_Code\MPC_12_11\STM32F303RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="MPC_12_11.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

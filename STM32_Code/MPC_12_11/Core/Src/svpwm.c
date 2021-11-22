@@ -12,7 +12,7 @@ ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
 
-uint8_t RX_data[1];
+uint8_t RX_data[3];
 uint8_t TX_data[1];
 
 uint16_t sinTable[] = {0,9,18,27,36,45,54,62,71,80,89,98,106,115,124,133,141,150,158,167,175,183,192,200,208,216,224,232,240,248,256,264,271,279,286,294,301,308,315,322,329,336,343,349,356,362,368,374,380,386,392,398,403,409,414,419,424,429,434,439,443,448,452,456,460,464,468,471,475,478,481,484,487,490,492,495,497,499,501,503,504,506,507,508,509,510,511,511,512,512};
@@ -105,9 +105,15 @@ uint8_t run = 0;
 
 
 void SVPWM_PC(){
-	TIM1->CCR1 = Ta;
-	TIM1->CCR2 = Tb;
-	TIM1->CCR3 = Tc;
+	if(run == 1){
+		TIM1->CCR1 = Ta;
+		TIM1->CCR2 = Tb;
+		TIM1->CCR3 = Tc;
+	} else {
+		TIM1->CCR1 = 0;
+		TIM1->CCR2 = 0;
+		TIM1->CCR3 = 0;
+	}
 }
 
 
@@ -134,7 +140,7 @@ void measure(){
 	HAL_ADC_Start_DMA(&hadc2, value2, 2);
 	HAL_ADC_Start_DMA(&hadc1, value, 3);
 
-	pData[0] = 123;
+	pData[0] = 255;
 	pData[1] = value[0] & 0xff;
 	pData[2] = (value[0] >> 8) & 0xff;
 	pData[3] = value[1] & 0xff;
@@ -147,7 +153,6 @@ void measure(){
 }
 
 uint8_t startFlag = 0;
-
 void startSending(){
 	if(RX_data[0] == 201 && startFlag == 0){
 		startFlag = 1;
@@ -155,6 +160,11 @@ void startSending(){
 
 		TX_data[0] = 101;
 		HAL_UART_Transmit(&huart2, TX_data, 1, 10);
+	} else {
+		Ta = RX_data[0] + (256*RX_data[1]);
+		Tb = RX_data[2] + (256*RX_data[3]);
+		Tc = RX_data[4] + (256*RX_data[5]);
+		SVPWM_PC();
 	}
 }
 
@@ -205,7 +215,7 @@ void SVPWM(){
 		wt++;
 		if(wt == 360){
 			wt = 0;
-			if(TIM2->ARR > 250){
+			if(TIM2->ARR > 100){
 				TIM2->ARR -= 1;
 			}
 			if(TIM2->ARR < TIM2->CNT){
@@ -218,7 +228,6 @@ void SVPWM(){
 		TIM1->CCR3 = 0;
 
 	}
-	send();
 }
 
 void startStop(){

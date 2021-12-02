@@ -338,6 +338,39 @@ void sixStepControl(){
 }
 
 /**
+ * This function implements model predictive control (MPC)
+ *
+ */
+states[8][3] = {{0,0,0},
+				{1,0,0},
+				{1,1,0},
+				{0,1,0},
+				{0,1,1},
+				{0,0,1},
+				{1,0,1},
+				{1,1,1}};
+
+struct Idq {
+	float32_t d,q;
+};
+
+struct Vdq {
+	float32_t d,q;
+};
+
+void transformToDQ(){
+	Idq.d = Ia+Ib+Ic;
+	Idq.q = Ia+Ib+Ic;
+}
+
+void modelPredictiveControl(){
+
+
+
+	checkTimer();
+}
+
+/**
  * This function executes set algorithms at regular interval
  * determined by TIM2
  *

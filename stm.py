@@ -26,11 +26,11 @@ def connectClick():
     global sp
     sp.baudrate = int(comBaud.get())
     sp.port = "COM"+comName.get()
-    sp.timeout = 1
+    sp.timeout = 10
     sp.bytesize=8
     sp.stopbits=1 
     sp.parity="N"
-    sp.set_buffer_size(rx_size = 12800, tx_size = 12800)
+    sp.set_buffer_size(rx_size = 17, tx_size = 6)
     
     
     if sp.isOpen():
@@ -43,9 +43,6 @@ def connectClick():
     clear()
 
 def startClick():
-    tx = [201,0,0,0,0,0]
-    sp.write(tx)
-    print(list(sp.read(1)))
     getData()
 
     
@@ -63,104 +60,65 @@ s1 = []
 s2 = []
 s3 = []
 s4 = []
+t = []
 
 
 def getData():
-    global I_a, I_b, E_a, E_b,s1,s2,s3,s4
+    global I_a, I_b, E_a, E_b,s1,s2,s3,s4,t
     I_af = 0
     I_bf = 0
     E_af = 0
     E_bf = 0
     x = 0
-    a = 0
+    a = 0.96
+    b = 1-a
     
     pi = 3.14159265359
-    angle_old = 0
+    angle = 0
     wt = 0
     V = 0.5*512
     Ts = 512
-    
-    while(x==0):
-        rxData = list(sp.read(17))
-
-        for i in range(9):
-            if (rxData[i] == 255):
-                I_a = (rxData[i+1] + 256*rxData[i+2])
-                I_b = (rxData[i+3] + 256*rxData[i+4])
-                E_a = (rxData[i+5] + 256*rxData[i+6]) - 1467
-                E_b = (rxData[i+7] + 256*rxData[i+8]) - 1474
+    p = 1
+    rxData = [255,0,0,0,0,0,0,0,0,0,0]
+    theta = 0   
+    p=0
+    plt.close()
+    while(x==0):        
+        # if (sp.inWaiting() > 0):
+        rxData = list(sp.read(5))
+    # df = pd.DataFrame({"I_a" : np.array(rxData)})
+    # df.to_csv(csvFileName.get()+".csv", index=False, header=False)
+    # print("Done!!!")
+        for i in range(3):
+            if ((rxData[i] == 123)):
+                theta = (rxData[i+1] + 256*rxData[i+2])
+                # E_a = (rxData[i+3] + 256*rxData[i+4])
+                # E_b = (rxData[i+5] + 256*rxData[i+6])
+                
+                # E_alpha = 1.5*E_a
+                # E_beta = 0.866*(E_a - 2*E_b)
+                
+                # a = math.atan2(E_b,E_a)*57.29 + 180
+                
+                s1.append(theta)
+                s2.append(0)
+                s3.append(0)
+                t.append(p)
+                p+=1
+                if(len(s1) >= 15000):
+                    plt.plot(t, s1)
+                    plt.show()
+                    saveClick(s1,s2,s3,s4)
+                    s1 = []
+                    s2 = []
+                    s3 = []
+                    s4 = []
+                    t=[]
+                    x = 1
+                    p=0
+                    print(123)
                 break
-        
-        I_af = a*I_af + (1-a)*I_a
-        I_bf = a*I_bf + (1-a)*I_b
-        E_af = a*E_af + (1-a)*E_a
-        E_bf = a*E_bf + (1-a)*E_b
-
-         
-        angle = math.atan2(E_af, E_bf)*57.29 + 180
-        
-        n = math.floor(wt/60) + 1
-
-        T1 = math.floor(V*math.sin((n*60 - wt)*pi/180))
-        T2 = math.floor(V*math.sin((wt - ((n-1)*60))*pi/180))
-        T0 = Ts - (T1+T2) + 5
-
-        if(wt >= 0 and wt < 60):
-            Ta = T1 + T2 + (T0/2)
-            Tb = T2 + (T0/2)
-            Tc = (T0/2)
-        elif(wt >= 60 and wt < 120):
-            Ta = T1 + (T0/2)
-            Tb = T1 + T2 + (T0/2)
-            Tc = (T0/2)
-        elif(wt >= 120 and wt < 180):
-            Ta = (T0/2)
-            Tb = T1 + T2 + (T0/2)
-            Tc = T2 + (T0/2)
-        elif(wt >= 180 and wt < 240):
-            Ta = (T0/2)
-            Tb = T1 + (T0/2)
-            Tc = T1 + T2 + (T0/2)
-        elif(wt >= 240 and wt < 300):
-            Ta = T2 + (T0/2)
-            Tb = (T0/2)
-            Tc = T1 + T2 + (T0/2)
-        elif(wt >= 300 and wt < 360):
-            Ta = T1 + T2 + (T0/2)
-            Tb = (T0/2)
-            Tc = T1 + (T0/2)
-        else:
-            Ta = 0
-            Tb = 0
-            Tc = 0
-
-        _ta0 = int(Ta) & 0xff
-        _tb0 = int(Tb) & 0xff
-        _tc0 = int(Tc) & 0xff
-
-        _ta1 = (int(Ta)>>8) & 0xff
-        _tb1 = (int(Tb)>>8) & 0xff
-        _tc1 = (int(Tc)>>8) & 0xff
-
-        tx = [_ta0,_ta1,_tb0,_tb1,_tc0,_tc1]
-        sp.write(tx)
-
-        wt += 1
-
-        if wt == 360:
-            wt = 0
-        
-        s1.append(E_af)
-        s2.append(E_bf)
-        s3.append(angle)
-        
-        if(len(s1) >= 5000):
-            saveClick()
-            s1 = []
-            s2 = []
-            s3 = []
-
-        
+            
         root.update()
     
 def on_closing():
@@ -170,23 +128,16 @@ def on_closing():
     
 def plot():
     global y1,y2,y3,y4
-    
+    print(len(t),len(s1))
     plt.cla()
-    plt.plot(x,s1)
-    plt.plot(x,s2)
-    # plt.plot(x,s3)
+    plt.plot(t,s1)
+    plt.plot(t,s2)
+    plt.plot(t,s3)
     fig.canvas.draw()
 
 
-def saveClick():
-    global s1,s2,s3,s4
-    sf1 = np.array(s1)
-    sf2 = np.array(s2)
-    sf3 = np.array(s3)
-    sf4 = np.array(s4)
-    print(len(sf1))
-    print(len(sf2))
-    df = pd.DataFrame({"I_a" : sf1, "I_b" : sf2, "E_a" : sf3})#, "E_b" : sf4})
+def saveClick(s1,s2,s3,s4):
+    df = pd.DataFrame({"I_a" : np.array(s1), "I_b" : np.array(s2), "E_a" : np.array(s3)})#, "E_b" : s4
     df.to_csv(csvFileName.get()+".csv", index=False, header=False)
 
 
@@ -233,7 +184,7 @@ baudLabel = Label(frame, text="Baud Rate")
 baudLabel.grid(row=0,column=2,sticky=W)
 
 comBaud = Entry(frame,width=10)
-comBaud.insert(0, 1843200)
+comBaud.insert(0, 2250000)
 comBaud.grid(row=0,column=3, padx=5)
 
 # Connect button

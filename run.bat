@@ -1,2 +1,2 @@
 @echo off
-start "" python .\stm.py
+start "" python setup.py build_ext --inplace & python stm2.py

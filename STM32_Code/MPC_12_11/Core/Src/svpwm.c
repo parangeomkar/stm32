@@ -407,8 +407,8 @@ void sixStepControl(){
 	checkTimer();
 }
 
-short IalphaPred,IbetaPred,costTemp;
-short cost = 65535;
+short IalphaPred,IbetaPred;
+int costTemp[7],cost,asd;
 float Ia,Ib,Ic;
 uint8_t optimalVector = 0;
 
@@ -416,29 +416,28 @@ void modelPredictiveControl(){
 	computeSinCos();
 	Ia = (float)Iab[0]/4096;
 	Ib = (float)Iab[1]/4096;
-	Ic = -(Ia+Ib)/4096;
+	Ic = -(Ia+Ib);
 	clarkeTransform(Ia,Ib,Ic,&Ialbt);
 	inverseParkTransform(0,0.3,&IalbtReq);
-
+	cost = 1000000;
+	i = 0;
 	for(i=0;i<7;i++){
 		clarkeTransform(states[i][0],states[i][1],states[i][2],&Valbt);
 
-		for(j=0;j<2;j++){
-			IalphaPred = (Valbt.alpha + 2*Ialbt.alpha - Ealbt.alpha)*421/1000;
-			IbetaPred = (Valbt.beta + 2*Ialbt.beta - Ealbt.beta)*421/1000;
-		}
+		IalphaPred = (Valbt.alpha + 2*Ialbt.alpha - Ealbt.alpha)*421/1000;
+		IbetaPred = (Valbt.beta + 2*Ialbt.beta - Ealbt.beta)*421/1000;
 
-		costTemp = square(mod(IalbtReq.alpha - IalphaPred)) + square(mod(IalbtReq.beta - IbetaPred));
+		costTemp[i] = square(mod(IalbtReq.alpha - IalphaPred)) + square(mod(IalbtReq.beta - IbetaPred));
 
-		if(costTemp < cost){
+		if(costTemp[i] < cost){
 			optimalVector = i;
-			cost = costTemp;
+			cost = costTemp[i];
 		}
 	}
 
-	wt = i*60;
+	wt = optimalVector*60;
 
-	if(i == 0){
+	if(optimalVector == 0){
 		V = 0;
 	} else {
 		V = 0.7;

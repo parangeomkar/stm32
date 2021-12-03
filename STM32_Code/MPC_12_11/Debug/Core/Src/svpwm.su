@@ -16,6 +16,6 @@ svpwm.c:319:6:SVPWM	24	static
 svpwm.c:373:6:checkTimer	0	static
 svpwm.c:384:6:openLoopControl	0	static
 svpwm.c:402:6:sixStepControl	8	static
-svpwm.c:415:6:modelPredictiveControl	36	static
-svpwm.c:455:6:executeSetAlgorithm	0	static
-svpwm.c:469:6:startStop	0	static
+svpwm.c:415:6:modelPredictiveControl	48	static
+svpwm.c:454:6:executeSetAlgorithm	0	static
+svpwm.c:468:6:startStop	0	static

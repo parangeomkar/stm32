@@ -4,6 +4,7 @@
 #define min(x,y) (((x) < (y)) ? (x) : (y))
 #define max(x,y) (((x) > (y)) ? (x) : (y))
 #define mod(x) (((x) > 0) ? (x) : (-x))
+#define square(x) (x*x)
 
 
 UART_HandleTypeDef huart2;
@@ -15,7 +16,7 @@ uint16_t sinTable[] = {0,9,18,27,36,45,54,62,71,80,89,98,106,115,124,133,141,150
 uint8_t asinTable[] = {0,0,1,1,2,2,3,3,4,4,4,5,5,6,6,7,7,8,8,9,9,9,10,10,11,11,12,12,13,13,14,14,14,15,15,16,16,17,17,18,18,19,19,20,20,21,21,22,22,23,23,23,24,24,25,25,26,26,27,27,28,28,29,29,30,31,31,32,32,33,33,34,34,35,35,36,36,37,38,38,39,39,40,40,41,42,42,43,43,44,45,45,46,47,47,48,49,49,50,51,51,52,53,54,54,55,56,57,58,58,59,60,61,62,63,64,65,66,67,68,70,71,72,74,76,78,80,83,90};
 
 
-float V = 0.95;
+float V = 0.7;
 
 // Variables used by SVPWM()
 int T1 = 0;
@@ -38,8 +39,6 @@ short theta;
 float dTheta;
 short thetaOld;
 short E1,E2,E3;
-float32_t Valpha = 0;
-float32_t Vbeta = 0;
 uint16_t speed;
 
 
@@ -56,6 +55,35 @@ float r = 0;
 float abs_y = 0;
 float angle = 0;
 
+
+/**
+ * This function implements model predictive control (MPC)
+ *
+ */
+uint8_t states[8][3] = {{0,0,0},
+				{1,0,0},
+				{1,1,0},
+				{0,1,0},
+				{0,1,1},
+				{0,0,1},
+				{1,0,1},
+				{1,1,1}};
+
+struct alphaBeta {
+	short alpha,beta;
+};
+
+struct  directQuad {
+	short d,q;
+};
+
+
+struct alphaBeta Ealbt,Valbt,Ialbt,IalbtReq;
+struct directQuad Idq;
+
+short sin000,sin120,sin240,cos000,cos120,cos240,id_pred,iq_pred;
+short Vdc = 12;
+uint8_t i,j;
 
 /**
  * This function limits the range of theta between 0 and 360 degrees
@@ -143,6 +171,49 @@ uint16_t arctan2(float y,float x){
 
 
 /**
+ * This function sine cos values for given theta used in park transform
+ *
+ */
+void computeSinCos(){
+	sin000 = sin2(theta);
+	cos000 = cos2(theta);
+//	sin120 = sin2(theta+120);
+//	sin240 = sin2(theta+240);
+//	cos120 = cos2(theta+120);
+//	cos240 = cos2(theta+240);
+}
+
+
+/**
+ * This function computes Park transform
+ *
+ */
+void parkTransform(short a, short b, short c, struct directQuad *Xdq){
+	Xdq->d = (sin000*a + sin240*b + sin120*c)*Vdc*2/3;
+	Xdq->q = (cos000*a + cos240*b + cos240*c)*Vdc*2/3;
+}
+
+/**
+ * This function computes Clarke transform
+ *
+ */
+void inverseParkTransform(float d, float q, struct alphaBeta *Xalbt){
+	Xalbt->alpha = d*cos000 - q*sin000;
+	Xalbt->beta = d*sin000 + q*cos000;
+}
+
+
+/**
+ * This function computes Clarke transform
+ *
+ */
+void clarkeTransform(float a, float b, float c, struct alphaBeta *Xalbt){
+	Xalbt->alpha = (a*2/3) - ((b+c)/3);
+	Xalbt->beta = (b-c)*250/433;
+}
+
+
+/**
  * This function transfers data over UART
  *
  */
@@ -188,11 +259,10 @@ void computePosition(){
 	E3 = -(E1+E2);
 
 	// Compute alpha-beta BEMFS
-   	Valpha = (E1*2/3) - ((E2+E3)/3);
-	Vbeta = (E2-E3)*250/433;
+	clarkeTransform(E1,E2,E3, &Ealbt);
 
 	// Compute theta
-	theta = arctan2(Vbeta,Valpha);
+	theta = arctan2(Ealbt.beta,Ealbt.alpha);
 
 	// Limit theta value
 	if(theta < 0){
@@ -337,35 +407,42 @@ void sixStepControl(){
 	checkTimer();
 }
 
-/**
- * This function implements model predictive control (MPC)
- *
- */
-states[8][3] = {{0,0,0},
-				{1,0,0},
-				{1,1,0},
-				{0,1,0},
-				{0,1,1},
-				{0,0,1},
-				{1,0,1},
-				{1,1,1}};
-
-struct Idq {
-	float32_t d,q;
-};
-
-struct Vdq {
-	float32_t d,q;
-};
-
-void transformToDQ(){
-	Idq.d = Ia+Ib+Ic;
-	Idq.q = Ia+Ib+Ic;
-}
+short IalphaPred,IbetaPred,costTemp;
+short cost = 65535;
+float Ia,Ib,Ic;
+uint8_t optimalVector = 0;
 
 void modelPredictiveControl(){
+	computeSinCos();
+	Ia = (float)Iab[0]/4096;
+	Ib = (float)Iab[1]/4096;
+	Ic = -(Ia+Ib)/4096;
+	clarkeTransform(Ia,Ib,Ic,&Ialbt);
+	inverseParkTransform(0,0.3,&IalbtReq);
 
+	for(i=0;i<7;i++){
+		clarkeTransform(states[i][0],states[i][1],states[i][2],&Valbt);
 
+		for(j=0;j<2;j++){
+			IalphaPred = (Valbt.alpha + 2*Ialbt.alpha - Ealbt.alpha)*421/1000;
+			IbetaPred = (Valbt.beta + 2*Ialbt.beta - Ealbt.beta)*421/1000;
+		}
+
+		costTemp = square(mod(IalbtReq.alpha - IalphaPred)) + square(mod(IalbtReq.beta - IbetaPred));
+
+		if(costTemp < cost){
+			optimalVector = i;
+			cost = costTemp;
+		}
+	}
+
+	wt = i*60;
+
+	if(i == 0){
+		V = 0;
+	} else {
+		V = 0.7;
+	}
 
 	checkTimer();
 }
@@ -377,7 +454,8 @@ void modelPredictiveControl(){
  */
 void executeSetAlgorithm(){
 	if(isOpenLoopComplete){
-		sixStepControl();
+//		sixStepControl();
+		modelPredictiveControl();
 	} else {
 		openLoopControl();
 	}

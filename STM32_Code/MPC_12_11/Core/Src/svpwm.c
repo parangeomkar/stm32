@@ -1,17 +1,17 @@
 #include "main.h"
-#include "arm_math.h"
+#include "math.h"
 
 #define min(x,y) (((x) < (y)) ? (x) : (y))
 #define max(x,y) (((x) > (y)) ? (x) : (y))
 #define mod(x) (((x) > 0) ? (x) : (-x))
 #define square(x) (x*x)
 
-
-UART_HandleTypeDef huart2;
-TIM_HandleTypeDef htim1;
-ADC_HandleTypeDef hadc1;
-ADC_HandleTypeDef hadc2;
-
+#ifndef huart2
+  extern UART_HandleTypeDef huart2;
+  extern ADC_HandleTypeDef hadc1;
+  extern ADC_HandleTypeDef hadc2;
+#endif
+  
 uint16_t sinTable[] = {0,9,18,27,36,45,54,62,71,80,89,98,106,115,124,133,141,150,158,167,175,183,192,200,208,216,224,232,240,248,256,264,271,279,286,294,301,308,315,322,329,336,343,349,356,362,368,374,380,386,392,398,403,409,414,419,424,429,434,439,443,448,452,456,460,464,468,471,475,478,481,484,487,490,492,495,497,499,501,503,504,506,507,508,509,510,511,511,512,512};
 uint8_t asinTable[] = {0,0,1,1,2,2,3,3,4,4,4,5,5,6,6,7,7,8,8,9,9,9,10,10,11,11,12,12,13,13,14,14,14,15,15,16,16,17,17,18,18,19,19,20,20,21,21,22,22,23,23,23,24,24,25,25,26,26,27,27,28,28,29,29,30,31,31,32,32,33,33,34,34,35,35,36,36,37,38,38,39,39,40,40,41,42,42,43,43,44,45,45,46,47,47,48,49,49,50,51,51,52,53,54,54,55,56,57,58,58,59,60,61,62,63,64,65,66,67,68,70,71,72,74,76,78,80,83,90};
 
@@ -60,30 +60,29 @@ float angle = 0;
  * This function implements model predictive control (MPC)
  *
  */
-uint8_t states[8][3] = {{0,0,0},
-				{1,0,0},
-				{1,1,0},
-				{0,1,0},
-				{0,1,1},
-				{0,0,1},
-				{1,0,1},
-				{1,1,1}};
+int states[8] = {1,3,2,6,4,5,7};
 
 struct alphaBeta {
-	short alpha,beta;
+	float alpha,beta;
 };
 
 struct  directQuad {
-	short d,q;
+	float d,q;
 };
 
 
 struct alphaBeta Ealbt,Valbt,Ialbt,IalbtReq;
-struct directQuad Idq;
+struct directQuad Idq,Edq,Vdq;
 
 short sin000,sin120,sin240,cos000,cos120,cos240,id_pred,iq_pred;
 short Vdc = 12;
-uint8_t i,j;
+int i,j;
+
+short IalphaPred,IbetaPred,IdPred,IqPred;
+int costTemp[6],cost,asd,Va,Vb,Vc;
+float Ia,Ib,Ic;
+int optimalVector = 0;
+
 
 /**
  * This function limits the range of theta between 0 and 360 degrees
@@ -177,10 +176,10 @@ uint16_t arctan2(float y,float x){
 void computeSinCos(){
 	sin000 = sin2(theta);
 	cos000 = cos2(theta);
-//	sin120 = sin2(theta+120);
-//	sin240 = sin2(theta+240);
-//	cos120 = cos2(theta+120);
-//	cos240 = cos2(theta+240);
+	sin120 = sin2(theta+120);
+	sin240 = sin2(theta+240);
+	cos120 = cos2(theta+120);
+	cos240 = cos2(theta+240);
 }
 
 
@@ -189,8 +188,8 @@ void computeSinCos(){
  *
  */
 void parkTransform(short a, short b, short c, struct directQuad *Xdq){
-	Xdq->d = (sin000*a + sin240*b + sin120*c)*Vdc*2/3;
-	Xdq->q = (cos000*a + cos240*b + cos240*c)*Vdc*2/3;
+	Xdq->d = (sin000*a + sin240*b + sin120*c)/768;
+	Xdq->q = (cos000*a + cos240*b + cos120*c)/768;
 }
 
 /**
@@ -218,13 +217,13 @@ void clarkeTransform(float a, float b, float c, struct alphaBeta *Xalbt){
  *
  */
 void transferUART(){
-	HAL_UART_Transmit(&huart2, txData, 3, 10);
+	HAL_UART_Transmit(&huart2, txData, 5, 10);
 
 	txData[0] = 123;
-	txData[1] = (uint16_t)(wt) & 0xff;
-	txData[2] = ((uint16_t)(wt) >> 8) & 0xff;
-//	txData[3] = (uint16_t)(wt) & 0xff;
-//	txData[4] = ((uint16_t)(wt) >> 8) & 0xff;
+	txData[1] = (uint16_t)(Ia+2000) & 0xff;
+	txData[2] = ((uint16_t)(Ia+2000) >> 8) & 0xff;
+	txData[3] = (uint16_t)(Ib+2000) & 0xff;
+	txData[4] = ((uint16_t)(Ib+2000) >> 8) & 0xff;
 }
 
 /**
@@ -240,7 +239,7 @@ void computeSpeed(){
 		 * Need to fix this
 		 *
 		 * */
-		speed = 0.999*speed + (dTheta)*0.486;
+		speed = (uint16_t)(0.999*speed + dTheta*0.486);
 	}
 }
 
@@ -289,6 +288,7 @@ void measureADC(){
 
 	// Compute rotor position
 	computePosition();
+	transferUART();
 }
 
 
@@ -319,13 +319,13 @@ void PIController(){
 void SVPWM(){
 	//	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
 	if(run == 1){
-		n = floor(wt/60)+1;
+		n = (uint8_t)(floor(wt/60))+1;
 
-		T1 = V*sin2(n*60 - wt);
-		T2 = V*sin2(wt - ((n-1)*60));
+		T1 = (uint16_t)(V*sin2(n*60 - wt));
+		T2 = (uint16_t)(V*sin2(wt - ((n-1)*60)));
 		T0 = Ts - (T1+T2) + 5;
 
-		if(wt >= 0 && wt < 60) {
+		if(wt < 60) {
 			Ta = T1 + T2 + (T0/2);
 			Tb = T2 + (T0/2);
 			Tc = (T0/2);
@@ -382,16 +382,16 @@ void checkTimer(){
  *
  */
 void openLoopControl(){
-	wt+=60;
+	wt+=10;
 	if(wt >= 360){
 		wt = 0;
-		if(TIM2->ARR > 9000){
-			TIM2->ARR -= 10;
+		if(TIM2->ARR > 1000){
+			TIM2->ARR -= 100;
+			checkTimer();
 		} else {
 			isOpenLoopComplete = 1;
 		}
 	}
-	checkTimer();
 }
 
 
@@ -400,34 +400,39 @@ void openLoopControl(){
  *
  */
 void sixStepControl(){
-	wt = 60*floor((theta)/60);
+	wt = (uint16_t)(60*floor((theta)/60));
 	if(TIM2->ARR > 4800){
 		TIM2->ARR -= 1;
 	}
 	checkTimer();
 }
 
-short IalphaPred,IbetaPred;
-int costTemp[7],cost,asd;
-float Ia,Ib,Ic;
-uint8_t optimalVector = 0;
+
+void getPrediction(){
+	Va = states[i] & 0x01;
+	Vb = (states[i]>>1) & 0x01;
+	Vc = (states[i]>>2) & 0x01;
+
+	parkTransform(Va,Vb,Vc,&Vdq);
+
+	IdPred = (short)((Vdq.d + 2*Idq.d - Edq.d)*421/512000);
+	IqPred = (short)((Vdq.q + 2*Idq.q - Edq.q)*421/512000);
+}
 
 void modelPredictiveControl(){
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
 	computeSinCos();
-	Ia = (float)Iab[0]/4096;
-	Ib = (float)Iab[1]/4096;
+	Ia = ((short)Iab[0] - 1948);
+	Ib = ((short)Iab[1] - 1923);
 	Ic = -(Ia+Ib);
-	clarkeTransform(Ia,Ib,Ic,&Ialbt);
-	inverseParkTransform(0,0.3,&IalbtReq);
+
+	parkTransform(Ia,Ib,Ic,&Idq);
 	cost = 1000000;
-	i = 0;
-	for(i=0;i<7;i++){
-		clarkeTransform(states[i][0],states[i][1],states[i][2],&Valbt);
 
-		IalphaPred = (Valbt.alpha + 2*Ialbt.alpha - Ealbt.alpha)*421/1000;
-		IbetaPred = (Valbt.beta + 2*Ialbt.beta - Ealbt.beta)*421/1000;
+	for(i=0;i<6;i++){
+		getPrediction(i);
 
-		costTemp[i] = square(mod(IalbtReq.alpha - IalphaPred)) + square(mod(IalbtReq.beta - IbetaPred));
+		costTemp[i] = (int)(square(mod(IdPred)) + square(mod(0.5 - IqPred)));
 
 		if(costTemp[i] < cost){
 			optimalVector = i;
@@ -435,15 +440,7 @@ void modelPredictiveControl(){
 		}
 	}
 
-	wt = optimalVector*60;
-
-	if(optimalVector == 0){
-		V = 0;
-	} else {
-		V = 0.7;
-	}
-
-	checkTimer();
+//	wt = optimalVector*60;
 }
 
 /**
@@ -452,12 +449,11 @@ void modelPredictiveControl(){
  *
  */
 void executeSetAlgorithm(){
-	if(isOpenLoopComplete){
+//	if(isOpenLoopComplete){
 //		sixStepControl();
 		modelPredictiveControl();
-	} else {
-		openLoopControl();
-	}
+//	}
+	openLoopControl();
 }
 
 

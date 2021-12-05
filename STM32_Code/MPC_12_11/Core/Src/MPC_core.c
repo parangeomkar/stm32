@@ -16,7 +16,7 @@ uint16_t sinTable[] = {0,9,18,27,36,45,54,62,71,80,89,98,106,115,124,133,141,150
 uint8_t asinTable[] = {0,0,1,1,2,2,3,3,4,4,4,5,5,6,6,7,7,8,8,9,9,9,10,10,11,11,12,12,13,13,14,14,14,15,15,16,16,17,17,18,18,19,19,20,20,21,21,22,22,23,23,23,24,24,25,25,26,26,27,27,28,28,29,29,30,31,31,32,32,33,33,34,34,35,35,36,36,37,38,38,39,39,40,40,41,42,42,43,43,44,45,45,46,47,47,48,49,49,50,51,51,52,53,54,54,55,56,57,58,58,59,60,61,62,63,64,65,66,67,68,70,71,72,74,76,78,80,83,90};
 
 
-float V = 0.7;
+float V = 0.3;
 
 // Variables used by SVPWM()
 int T1 = 0;
@@ -45,7 +45,7 @@ uint16_t speed;
 uint32_t Eab[2],Iab[2];
 
 // Variables used by transferUART()
-uint8_t txData[7];
+uint8_t txData[9];
 
 // Variables used by arctan2
 float c1 = 0.7854;
@@ -59,7 +59,7 @@ float angle = 0;
  * This function implements model predictive control (MPC)
  *
  */
-int states[7] = {0,1,3,2,6,4,5};
+int states[6] = {1,3,2,6,4,5};
 
 struct alphaBeta {
 	float alpha,beta;
@@ -216,13 +216,16 @@ void clarkeTransform(float a, float b, float c, struct alphaBeta *Xalbt){
  *
  */
 void transferUART(){
-	HAL_UART_Transmit(&huart2, txData, 5, 10);
+	HAL_UART_Transmit(&huart2, txData, 8, 10);
 
 	txData[0] = 123;
 	txData[1] = (uint16_t)(Ia+2000) & 0xff;
 	txData[2] = ((uint16_t)(Ia+2000) >> 8) & 0xff;
 	txData[3] = (uint16_t)(Ib+2000) & 0xff;
 	txData[4] = ((uint16_t)(Ib+2000) >> 8) & 0xff;
+	txData[5] = (uint16_t)(Idq.q*100+100) & 0xff;
+	txData[6] = (uint16_t)(theta+2000) & 0xff;
+	txData[7] = ((uint16_t)(theta+2000) >> 8) & 0xff;
 }
 
 /**
@@ -252,8 +255,8 @@ void computeSpeed(){
 void computePosition(){
 
 	// Compute abc BEMFs
-	Ea = ((short)Eab[0]-1880)*81/100;
-	Eb =  (short)Eab[1]-1768;
+	Ea = ((short)Eab[0]-1885);
+	Eb =  (short)Eab[1]-1745;
 	Ec = -(Ea+Eb);
 
 	// Compute alpha-beta BEMFS
@@ -394,9 +397,10 @@ void predictCurrent(){
 
 	parkTransform(Va,Vb,Vc,&Vdq);
 
-	IdPred = (float)(Vdc*Vdq.d + 2*Idq.d - Edq.d);
-	IqPred = (float)(Vdc*Vdq.q + 2*Idq.q - Edq.q);
+	IdPred = (float)(5*Vdq.d + 2*Idq.d - Edq.d);
+	IqPred = (float)(5*Vdq.q + 2*Idq.q - Edq.q);
 }
+
 
 void modelPredictiveControl(){
 	computeSinCos();
@@ -416,10 +420,10 @@ void modelPredictiveControl(){
 
 	cost = 100000;
 
-	for(i=0;i<7;i++){
+	for(i=0;i<6;i++){
 		predictCurrent(i);
 
-		costTemp[i] = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(500 - (short)(IqPred*1000))))/1000000;
+		costTemp[i] = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(100 - (short)(IqPred*1000))))/1000000;
 
 		if(costTemp[i] < cost){
 			optimalVector = i;
@@ -427,7 +431,10 @@ void modelPredictiveControl(){
 		}
 	}
 
-	wt = optimalVector*60;
+	wt = limitTheta((optimalVector+1)*60);
+	if(wt >= 360){
+		wt = 0;
+	}
 }
 
 
@@ -447,19 +454,30 @@ void startStop(){
  * This function controls the execution and ADC measurement
  *
  */
-char executionCount = 0;
+uint16_t executionCount, cnts = 0;
 void executeAll(){
 	measureADC();
 	SVPWM();
-//	if(executionCount == 2){
-	//	if(isOpenLoopComplete){
-	//		sixStepControl();
-			modelPredictiveControl();
-	//	}
-		openLoopControl();
+	if(run){
+		if(isOpenLoopComplete){
+//			sixStepControl();
+			if(cnts == 60){
+				modelPredictiveControl();
+				cnts = 0;
+			}else{
+				cnts++;
+			}
+//			openLoopControl();
+		} else {
+			openLoopControl();
+		}
 
-
-		executionCount = 0;
-//	}
-	executionCount++;
+		transferUART();
+		if(executionCount > 50000){
+			isOpenLoopComplete = 1;
+		} else {
+//			isOpenLoopComplete = 1;
+			executionCount++;
+		}
+	}
 }

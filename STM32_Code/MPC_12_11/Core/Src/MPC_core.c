@@ -16,7 +16,7 @@ uint16_t sinTable[] = {0,9,18,27,36,45,54,62,71,80,89,98,106,115,124,133,141,150
 uint8_t asinTable[] = {0,0,1,1,2,2,3,3,4,4,4,5,5,6,6,7,7,8,8,9,9,9,10,10,11,11,12,12,13,13,14,14,14,15,15,16,16,17,17,18,18,19,19,20,20,21,21,22,22,23,23,23,24,24,25,25,26,26,27,27,28,28,29,29,30,31,31,32,32,33,33,34,34,35,35,36,36,37,38,38,39,39,40,40,41,42,42,43,43,44,45,45,46,47,47,48,49,49,50,51,51,52,53,54,54,55,56,57,58,58,59,60,61,62,63,64,65,66,67,68,70,71,72,74,76,78,80,83,90};
 uint8_t atan2Error[] =  {5, 4, 6, 5, 6, 7, 5, 7, 8, 8, 5, 8, 9, 9, 9, 5, 9,10,10,10,10,10,10,10,10,10,10,10,10,10, 9, 9, 9, 9, 9, 9, 8, 8, 8, 8, 7, 7, 7, 7, 6, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 2, 3, 3, 5, 3, 4, 4, 5, 4, 5, 5, 5, 6, 5, 6, 7, 5, 7, 8, 8, 8, 5, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 8, 8, 8, 8, 7, 7, 7, 7, 6, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 2, 2, 2, 2, 5, 2, 3, 5, 3, 4, 4, 5, 4, 5, 5, 6, 6, 5, 6, 7, 5, 7, 8, 8, 8, 8, 5, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 2, 2, 2, 5, 2, 3, 5, 3, 4, 5, 4, 5, 5, 5, 6, 6, 5, 6, 7, 7, 5, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 1, 1, 1, 5, 1, 2, 2, 5, 2, 3, 5, 3, 5};
 
-uint8_t V = 30;
+uint16_t V = 300;
 
 // Variables used by SVPWM()
 int T1 = 0;
@@ -80,7 +80,7 @@ int i,j;
 float IalphaPred,IbetaPred,IdPred,IqPred;
 float costTemp,cost;
 short Va,Vb,Vc, Ea,Eb,Ec, Ia,Ib,Ic;
-int optimalVector = 0;
+uint8_t optimalVector,optimalDuty = 0;
 
 
 /**
@@ -327,8 +327,8 @@ void SVPWM(){
 	if(run == 1){
 		n = (uint8_t)(floor(wt/60))+1;
 
-		T1 = (uint16_t)(V*sin2(n*60 - wt)/100);
-		T2 = (uint16_t)(V*sin2(wt - ((n-1)*60))/100);
+		T1 = (uint16_t)(V*sin2(n*60 - wt)/1000);
+		T2 = (uint16_t)(V*sin2(wt - ((n-1)*60))/1000);
 		T0 = Ts - (T1+T2) + 5;
 
 		if(wt < 60) {
@@ -425,17 +425,38 @@ void modelPredictiveControl(){
 	cost = 100000;
 
 	for(i=0;i<6;i++){
-		predictCurrent(i);
+		Va = states[i] & 0x01;
+		Vb = (states[i]>>1) & 0x01;
+		Vc = (states[i]>>2) & 0x01;
+		parkTransform(Va,Vb,Vc,&Vdq);
 
-		costTemp = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(100 - (short)(IqPred*1000))))/1000000;
+		for(j=1;j<3;j++){
+//			predictCurrent(i);
 
-		if(costTemp < cost){
-			optimalVector = i;
-			cost = costTemp;
+			IdPred = (float)((12/j)*Vdq.d + 2*Idq.d - Edq.d);
+			IqPred = (float)((12/j)*Vdq.q + 2*Idq.q - Edq.q);
+
+			costTemp = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(100 - (short)(IqPred*1000))))/1000000;
+
+			if(costTemp < cost){
+				optimalVector = i;
+				optimalDuty = j;
+				cost = costTemp;
+			}
 		}
 	}
 
-	wt = limitTheta((optimalVector)*60);
+	if(optimalDuty == 2){
+		V = 200;
+//	}else if(optimalDuty == 3){
+//		V = 100;
+//	} else if(optimalDuty == 4){
+//		V = 75;
+	} else {
+		V = 400;
+	}
+
+	wt = limitTheta((optimalVector+1)*60);
 	if(wt >= 360){
 		wt = 0;
 	}

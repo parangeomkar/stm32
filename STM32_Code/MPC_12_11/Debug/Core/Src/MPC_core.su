@@ -1,4 +1,4 @@
-MPC_core.c:327:6:SVPWM.part.0	16	static
+MPC_core.c:325:6:SVPWM.part.0	16	static
 MPC_core.c:92:7:limitTheta	0	static
 MPC_core.c:107:7:sin2	0	static
 MPC_core.c:128:7:cos2	0	static
@@ -11,11 +11,12 @@ MPC_core.c:208:6:clarkeTransform	0	static
 MPC_core.c:218:6:transferUART	16	static
 MPC_core.c:235:6:computeSpeed	24	static
 MPC_core.c:255:6:computePosition	40	static
-MPC_core.c:293:6:measureADC	8	static
-MPC_core.c:310:6:PIController	0	static
-MPC_core.c:327:6:SVPWM	0	static
-MPC_core.c:381:6:openLoopControl	0	static
-MPC_core.c:399:6:predictCurrent	16	static
-MPC_core.c:411:6:modelPredictiveControl	40	static
-MPC_core.c:456:6:startStop	0	static
-MPC_core.c:469:6:executeAll	8	static
+MPC_core.c:291:6:measureADC	8	static
+MPC_core.c:308:6:PIController	0	static
+MPC_core.c:325:6:SVPWM	0	static
+MPC_core.c:379:6:openLoopControl	0	static
+MPC_core.c:391:6:sixStepControl	8	static
+MPC_core.c:397:6:predictCurrent	16	static
+MPC_core.c:409:6:modelPredictiveControl	56	static
+MPC_core.c:470:6:startStop	0	static
+MPC_core.c:483:6:executeAll	8	static

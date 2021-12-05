@@ -48,8 +48,6 @@
 
 /* Exported functions prototypes ---------------------------------------------*/
 void TIM1_CC_IRQHandler(void);
-void TIM2_IRQHandler(void);
-void TIM3_IRQHandler(void);
 void EXTI15_10_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 

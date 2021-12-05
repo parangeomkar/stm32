@@ -38,7 +38,6 @@ uint8_t isOpenLoopComplete = 0;
 short theta;
 float dTheta;
 short thetaOld;
-short E1,E2,E3;
 uint16_t speed;
 
 
@@ -60,7 +59,7 @@ float angle = 0;
  * This function implements model predictive control (MPC)
  *
  */
-int states[8] = {1,3,2,6,4,5,7};
+int states[7] = {0,1,3,2,6,4,5};
 
 struct alphaBeta {
 	float alpha,beta;
@@ -75,12 +74,12 @@ struct alphaBeta Ealbt,Valbt,Ialbt,IalbtReq;
 struct directQuad Idq,Edq,Vdq;
 
 short sin000,sin120,sin240,cos000,cos120,cos240,id_pred,iq_pred;
-short Vdc = 12;
+float Vdc = 12;
 int i,j;
 
-short IalphaPred,IbetaPred,IdPred,IqPred;
-int costTemp[6],cost,asd,Va,Vb,Vc;
-float Ia,Ib,Ic;
+float IalphaPred,IbetaPred,IdPred,IqPred;
+float costTemp[7],cost;
+short Va,Vb,Vc, Ea,Eb,Ec, Ia,Ib,Ic;
 int optimalVector = 0;
 
 
@@ -188,8 +187,8 @@ void computeSinCos(){
  *
  */
 void parkTransform(short a, short b, short c, struct directQuad *Xdq){
-	Xdq->d = (sin000*a + sin240*b + sin120*c)/768;
-	Xdq->q = (cos000*a + cos240*b + cos120*c)/768;
+	Xdq->d = (float)(sin000*a + sin240*b + sin120*c)/768; // (2/3)*(1/512) = 1/768
+	Xdq->q = (float)(cos000*a + cos240*b + cos120*c)/768;
 }
 
 /**
@@ -253,12 +252,12 @@ void computeSpeed(){
 void computePosition(){
 
 	// Compute abc BEMFs
-	E1 = ((short)Eab[0]-1880)*81/100;
-	E2 =  (short)Eab[1]-1768;
-	E3 = -(E1+E2);
+	Ea = ((short)Eab[0]-1880)*81/100;
+	Eb =  (short)Eab[1]-1768;
+	Ec = -(Ea+Eb);
 
 	// Compute alpha-beta BEMFS
-	clarkeTransform(E1,E2,E3, &Ealbt);
+	clarkeTransform(Ea,Eb,Ec, &Ealbt);
 
 	// Compute theta
 	theta = arctan2(Ealbt.beta,Ealbt.alpha);
@@ -288,7 +287,7 @@ void measureADC(){
 
 	// Compute rotor position
 	computePosition();
-	transferUART();
+	//transferUART();
 }
 
 
@@ -367,30 +366,13 @@ void SVPWM(){
 
 
 /**
- * This function checks and resets the Timer 2 count if it is greater than preset.
- *
- */
-void checkTimer(){
-	if(TIM2->ARR < TIM2->CNT){
-		TIM2->CNT = 0;
-	}
-}
-
-
-/**
  * This function implements open loop control
  *
  */
 void openLoopControl(){
-	wt+=10;
+	wt+=1;
 	if(wt >= 360){
 		wt = 0;
-		if(TIM2->ARR > 1000){
-			TIM2->ARR -= 100;
-			checkTimer();
-		} else {
-			isOpenLoopComplete = 1;
-		}
 	}
 }
 
@@ -401,38 +383,43 @@ void openLoopControl(){
  */
 void sixStepControl(){
 	wt = (uint16_t)(60*floor((theta)/60));
-	if(TIM2->ARR > 4800){
-		TIM2->ARR -= 1;
-	}
-	checkTimer();
 }
 
+float d[4] = {1,0.75,0.5,0.25};
 
-void getPrediction(){
+void predictCurrent(){
 	Va = states[i] & 0x01;
 	Vb = (states[i]>>1) & 0x01;
 	Vc = (states[i]>>2) & 0x01;
 
 	parkTransform(Va,Vb,Vc,&Vdq);
 
-	IdPred = (short)((Vdq.d + 2*Idq.d - Edq.d)*421/512000);
-	IqPred = (short)((Vdq.q + 2*Idq.q - Edq.q)*421/512000);
+	IdPred = (float)(Vdc*Vdq.d + 2*Idq.d - Edq.d);
+	IqPred = (float)(Vdc*Vdq.q + 2*Idq.q - Edq.q);
 }
 
 void modelPredictiveControl(){
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
 	computeSinCos();
-	Ia = ((short)Iab[0] - 1948);
+
+	Ia = ((short)Iab[0] - 1945);
 	Ib = ((short)Iab[1] - 1923);
 	Ic = -(Ia+Ib);
 
 	parkTransform(Ia,Ib,Ic,&Idq);
-	cost = 1000000;
+	parkTransform(Ea,Eb,Ec,&Edq);
 
-	for(i=0;i<6;i++){
-		getPrediction(i);
+	Idq.d = Idq.d/1241; // 3.3/4096 = 1/1241
+	Idq.q = Idq.q/1241;
 
-		costTemp[i] = (int)(square(mod(IdPred)) + square(mod(0.5 - IqPred)));
+	Edq.d = Edq.d/1241; // 3.3/4096 = 1/1241
+	Edq.q = Edq.q/1241;
+
+	cost = 100000;
+
+	for(i=0;i<7;i++){
+		predictCurrent(i);
+
+		costTemp[i] = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(500 - (short)(IqPred*1000))))/1000000;
 
 		if(costTemp[i] < cost){
 			optimalVector = i;
@@ -440,20 +427,7 @@ void modelPredictiveControl(){
 		}
 	}
 
-//	wt = optimalVector*60;
-}
-
-/**
- * This function executes set algorithms at regular interval
- * determined by TIM2
- *
- */
-void executeSetAlgorithm(){
-//	if(isOpenLoopComplete){
-//		sixStepControl();
-		modelPredictiveControl();
-//	}
-	openLoopControl();
+	wt = optimalVector*60;
 }
 
 
@@ -467,4 +441,25 @@ void startStop(){
 	} else {
 		run = 0;
 	}
+}
+
+/**
+ * This function controls the execution and ADC measurement
+ *
+ */
+char executionCount = 0;
+void executeAll(){
+	measureADC();
+	SVPWM();
+//	if(executionCount == 2){
+	//	if(isOpenLoopComplete){
+	//		sixStepControl();
+			modelPredictiveControl();
+	//	}
+		openLoopControl();
+
+
+		executionCount = 0;
+//	}
+	executionCount++;
 }

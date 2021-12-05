@@ -14,9 +14,9 @@
   
 uint16_t sinTable[] = {0,9,18,27,36,45,54,62,71,80,89,98,106,115,124,133,141,150,158,167,175,183,192,200,208,216,224,232,240,248,256,264,271,279,286,294,301,308,315,322,329,336,343,349,356,362,368,374,380,386,392,398,403,409,414,419,424,429,434,439,443,448,452,456,460,464,468,471,475,478,481,484,487,490,492,495,497,499,501,503,504,506,507,508,509,510,511,511,512,512};
 uint8_t asinTable[] = {0,0,1,1,2,2,3,3,4,4,4,5,5,6,6,7,7,8,8,9,9,9,10,10,11,11,12,12,13,13,14,14,14,15,15,16,16,17,17,18,18,19,19,20,20,21,21,22,22,23,23,23,24,24,25,25,26,26,27,27,28,28,29,29,30,31,31,32,32,33,33,34,34,35,35,36,36,37,38,38,39,39,40,40,41,42,42,43,43,44,45,45,46,47,47,48,49,49,50,51,51,52,53,54,54,55,56,57,58,58,59,60,61,62,63,64,65,66,67,68,70,71,72,74,76,78,80,83,90};
+uint8_t atan2Error[] =  {5, 4, 6, 5, 6, 7, 5, 7, 8, 8, 5, 8, 9, 9, 9, 5, 9,10,10,10,10,10,10,10,10,10,10,10,10,10, 9, 9, 9, 9, 9, 9, 8, 8, 8, 8, 7, 7, 7, 7, 6, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 5, 2, 3, 3, 5, 3, 4, 4, 5, 4, 5, 5, 5, 6, 5, 6, 7, 5, 7, 8, 8, 8, 5, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 8, 8, 8, 8, 7, 7, 7, 7, 6, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 2, 2, 2, 2, 5, 2, 3, 5, 3, 4, 4, 5, 4, 5, 5, 6, 6, 5, 6, 7, 5, 7, 8, 8, 8, 8, 5, 8, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 1, 2, 2, 2, 5, 2, 3, 5, 3, 4, 5, 4, 5, 5, 5, 6, 6, 5, 6, 7, 7, 5, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 6, 6, 6, 6, 5, 5, 5, 5, 4, 4, 4, 3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 1, 1, 1, 5, 1, 2, 2, 5, 2, 3, 5, 3, 5};
 
-
-float V = 0.3;
+uint8_t V = 30;
 
 // Variables used by SVPWM()
 int T1 = 0;
@@ -78,7 +78,7 @@ float Vdc = 12;
 int i,j;
 
 float IalphaPred,IbetaPred,IdPred,IqPred;
-float costTemp[7],cost;
+float costTemp,cost;
 short Va,Vb,Vc, Ea,Eb,Ec, Ia,Ib,Ic;
 int optimalVector = 0;
 
@@ -265,6 +265,10 @@ void computePosition(){
 	// Compute theta
 	theta = arctan2(Ealbt.beta,Ealbt.alpha);
 
+
+	// Include error +/- 5 degrees
+	//theta = theta - atan2Error[theta] + 5;
+
 	// Limit theta value
 	if(theta < 0){
 		theta += 360;
@@ -323,8 +327,8 @@ void SVPWM(){
 	if(run == 1){
 		n = (uint8_t)(floor(wt/60))+1;
 
-		T1 = (uint16_t)(V*sin2(n*60 - wt));
-		T2 = (uint16_t)(V*sin2(wt - ((n-1)*60)));
+		T1 = (uint16_t)(V*sin2(n*60 - wt)/100);
+		T2 = (uint16_t)(V*sin2(wt - ((n-1)*60))/100);
 		T0 = Ts - (T1+T2) + 5;
 
 		if(wt < 60) {
@@ -423,15 +427,15 @@ void modelPredictiveControl(){
 	for(i=0;i<6;i++){
 		predictCurrent(i);
 
-		costTemp[i] = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(100 - (short)(IqPred*1000))))/1000000;
+		costTemp = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(100 - (short)(IqPred*1000))))/1000000;
 
-		if(costTemp[i] < cost){
+		if(costTemp < cost){
 			optimalVector = i;
-			cost = costTemp[i];
+			cost = costTemp;
 		}
 	}
 
-	wt = limitTheta((optimalVector+1)*60);
+	wt = limitTheta((optimalVector)*60);
 	if(wt >= 360){
 		wt = 0;
 	}
@@ -459,25 +463,17 @@ void executeAll(){
 	measureADC();
 	SVPWM();
 	if(run){
-		if(isOpenLoopComplete){
-//			sixStepControl();
-			if(cnts == 60){
+		if(executionCount > 50000){
+			if(cnts == 100){
 				modelPredictiveControl();
 				cnts = 0;
-			}else{
+			} else {
 				cnts++;
 			}
-//			openLoopControl();
 		} else {
 			openLoopControl();
-		}
-
-		transferUART();
-		if(executionCount > 50000){
-			isOpenLoopComplete = 1;
-		} else {
-//			isOpenLoopComplete = 1;
 			executionCount++;
 		}
+		//transferUART();
 	}
 }

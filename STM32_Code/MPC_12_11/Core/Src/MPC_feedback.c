@@ -3,29 +3,23 @@
 #include "MPC_feedback.h"
 
 
-// Variables used by measureADC()
-uint32_t Eab[2],Iab[2];
-
-
-// Variables used by computePosition()
-float dTheta;
-short thetaOld;
-
-
 /**
  * This function computes average rotor speed
  *
  */
+uint16_t clockTicks = 1;
 void computeSpeed(){
-	dTheta = theta - thetaOld;
-	dTheta = mod(dTheta);
+	dTheta = thetaOld - theta;
 
-	if(dTheta < 100){
-		/*
-		 * Need to fix this
-		 *
-		 * */
-		speed = (uint16_t)(0.999*speed + dTheta*0.486);
+	// check if angle roll over has occurred
+	if(dTheta > 250){
+		if(clockTicks > 0){
+			speed = 150000/clockTicks; 	// speed = 60/(Ts*p*clockTicks) = 150000/clockTicks --> p = 4 || Ts = 1 clockTick = 100uS
+		}
+		clockTicks = 0;
+		PIController();
+	} else {
+		clockTicks++;
 	}
 }
 
@@ -42,10 +36,6 @@ void computePosition(){
 
 	// Compute theta
 	theta = arctan2(Ealbt.beta,Ealbt.alpha);
-
-
-	// Include error +/- 5 degrees
-	//theta = theta - atan2Error[theta] + 5;
 
 	// Limit theta value
 	if(theta < 0){

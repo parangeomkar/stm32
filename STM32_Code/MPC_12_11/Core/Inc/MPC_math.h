@@ -1,5 +1,6 @@
 #ifndef MPC_math_dec
 	#define MPC_math_dec 1
+
 	#define min(x,y) (((x) < (y)) ? (x) : (y))
 	#define max(x,y) (((x) > (y)) ? (x) : (y))
 	#define mod(x) (((x) > 0) ? (x) : (-x))
@@ -15,7 +16,6 @@
 
 	short sin000,sin120,sin240,cos000,cos120,cos240,id_pred,iq_pred;
 
-	extern uint8_t atan2Error[];
 
 	/**
 	 * This function limits the range of theta between 0 and 360 degrees

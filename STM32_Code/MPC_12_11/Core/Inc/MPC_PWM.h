@@ -12,7 +12,7 @@
 
 	uint8_t run;
 	uint16_t wt;
-	uint16_t V;
+	extern uint16_t V;
 
 	/**
 	 * This function computes SVPWM timings for TIM1

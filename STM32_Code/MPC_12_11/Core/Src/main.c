@@ -112,14 +112,17 @@ int main(void)
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
+
+  	// Calibrate ADCs
 	HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
 	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
 
+	// Enable MOSFET drivers
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_10, 1);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_11, 1);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, 1);
 
-
+	// Start timers
 	HAL_TIM_PWM_Start_IT(&htim1, TIM_CHANNEL_4);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);

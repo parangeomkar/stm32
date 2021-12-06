@@ -52,7 +52,8 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void executeAll();
+void startStop();
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
@@ -78,9 +79,9 @@ extern TIM_HandleTypeDef htim1;
 void TIM1_CC_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM1_CC_IRQn 0 */
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
-    executeAll();
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
+  executeAll();
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
   /* USER CODE END TIM1_CC_IRQn 0 */
   HAL_TIM_IRQHandler(&htim1);
   /* USER CODE BEGIN TIM1_CC_IRQn 1 */

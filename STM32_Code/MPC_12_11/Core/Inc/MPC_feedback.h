@@ -7,7 +7,7 @@
 
 	// Variables used by computePosition()
 	short theta;
-	uint16_t speed;
+	uint32_t speed;
 
 
 	struct alphaBeta Ealbt,Valbt,Ialbt,IalbtReq;
@@ -16,6 +16,14 @@
 
 	short Va,Vb,Vc, Ea,Eb,Ec, Ia,Ib,Ic;
 
+
+	// Variables used by measureADC()
+	uint32_t Eab[2],Iab[2];
+
+
+	// Variables used by computePosition()
+	short dTheta;
+	short thetaOld;
 
 	/**
 	 * This function computes average rotor speed

@@ -1,5 +1,5 @@
 #include "main.h"
-#include "math.h"
+#include "MPC_core.h"
 #include "MPC_math.h"
 #include "MPC_PWM.h"
 #include "MPC_feedback.h"
@@ -9,36 +9,34 @@
 uint8_t isOpenLoopComplete = 0;
 
 
-/**
- * This function implements model predictive control (MPC)
- *
- */
 int states[6] = {1,3,2,6,4,5};
 
 float Vdc = 12;
-int i,j;
 
-float IalphaPred,IbetaPred,IdPred,IqPred;
-float costTemp,cost;
-uint8_t optimalVector,optimalDuty = 0;
-
-
-short error;
-uint16_t s=0;
-float Kterm;
 float Iterm = 0;
-float D = 0.7;
-void PIController(){
-	error = 1000 - speed;
-	Kterm = (float)error/1000;
-	Iterm += (float)error/5000;
+short iqRef = 0;
 
-	if(Iterm > 1){
-		Iterm = 1;
-	} else if(Iterm < -1){
-		Iterm = -1;
+/**
+ * This function implements Speed PI controller
+ *
+ */
+void PIController(){
+	error = 500 - speed;
+	Kterm = error;
+	Iterm += (float)error/10000; // error*Kp*Ts => error*2*0.0001 => error/5000
+
+	if(Iterm > 100){
+		Iterm = 100;
+	} else if(Iterm < -100){
+		Iterm = -100;
 	}
-	D = (Kterm+Iterm)/2;
+	iqRef = (Kterm+Iterm);
+
+	if(iqRef>500){
+		iqRef = 500;
+	} else if(Iterm < -500){
+		Iterm = -500;
+	}
 }
 
 
@@ -60,30 +58,15 @@ void openLoopControl(){
  *
  */
 void sixStepControl(){
-	wt = (uint16_t)(60*floor((theta)/60));
+	wt = (uint16_t)(60*(uint8_t)((theta)/60));
 }
-
 
 
 
 /**
- * This function implements model predictive control
+ * This function implements model predictive control (MPC)
  *
  */
-float d[4] = {1,0.75,0.5,0.25};
-
-void predictCurrent(){
-	Va = states[i] & 0x01;
-	Vb = (states[i]>>1) & 0x01;
-	Vc = (states[i]>>2) & 0x01;
-
-	parkTransform(Va,Vb,Vc,&Vdq);
-
-	IdPred = (float)(5*Vdq.d + 2*Idq.d - Edq.d);
-	IqPred = (float)(5*Vdq.q + 2*Idq.q - Edq.q);
-}
-
-
 void modelPredictiveControl(){
 	computeSinCos();
 
@@ -105,12 +88,10 @@ void modelPredictiveControl(){
 		parkTransform(Va,Vb,Vc,&Vdq);
 
 		for(j=1;j<3;j++){
-//			predictCurrent(i);
+			IdPred = (float)((5/j)*Vdq.d + 2*Idq.d - Edq.d);
+			IqPred = (float)((5/j)*Vdq.q + 2*Idq.q - Edq.q);
 
-			IdPred = (float)((12/j)*Vdq.d + 2*Idq.d - Edq.d);
-			IqPred = (float)((12/j)*Vdq.q + 2*Idq.q - Edq.q);
-
-			costTemp = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(100 - (short)(IqPred*1000))))/1000000;
+			costTemp = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(iqRef - (short)(IqPred*1000))))/1000000;
 
 			if(costTemp < cost){
 				optimalVector = i;
@@ -121,13 +102,13 @@ void modelPredictiveControl(){
 	}
 
 	if(optimalDuty == 2){
-		V = 200;
+		V = 300;
 //	}else if(optimalDuty == 3){
-//		V = 100;
+//		V = 200;
 //	} else if(optimalDuty == 4){
-//		V = 75;
+//		V = 150;
 	} else {
-		V = 400;
+		V = 600;
 	}
 
 	wt = limitTheta((optimalVector+1)*60);
@@ -168,7 +149,6 @@ void executeAll(){
 			openLoopControl();
 			executionCount++;
 		}
-		//transferUART();
 	}
 	SVPWM();
 }

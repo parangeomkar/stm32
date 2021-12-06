@@ -1,5 +1,4 @@
 #include "main.h"
-#include "math.h"
 #include "MPC_math.h"
 #include "MPC_PWM.h"
 
@@ -23,11 +22,12 @@ uint16_t V = 300;
  */
 void SVPWM(){
 	if(run == 1){
-		n = (uint8_t)(floor(wt/60))+1;
+		n = ((uint8_t)(wt/60))+1;
 
 		T1 = (uint16_t)(V*sin2(n*60 - wt)/1000);
 		T2 = (uint16_t)(V*sin2(wt - ((n-1)*60))/1000);
 		T0 = Ts - (T1+T2) + 5;
+
 
 		if(wt < 60) {
 			Ta = T1 + T2 + (T0/2);
@@ -58,9 +58,11 @@ void SVPWM(){
 			Tb = 0;
 			Tc = 0;
 		}
+
 		TIM1->CCR1 = Ta;
 		TIM1->CCR2 = Tb;
 		TIM1->CCR3 = Tc;
+
 	} else {
 		TIM1->CCR1 = 0;
 		TIM1->CCR2 = 0;

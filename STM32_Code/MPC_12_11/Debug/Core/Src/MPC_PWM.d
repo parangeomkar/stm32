@@ -1,4 +1,4 @@
-Core/Src/MPC_core.o: ../Core/Src/MPC_core.c ../Core/Inc/main.h \
+Core/Src/MPC_PWM.o: ../Core/Src/MPC_PWM.c ../Core/Inc/main.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal.h \
  ../Core/Inc/stm32f3xx_hal_conf.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_rcc.h \
@@ -31,8 +31,7 @@ Core/Src/MPC_core.o: ../Core/Src/MPC_core.c ../Core/Inc/main.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim_ex.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart_ex.h \
- ../Core/Inc/MPC_math.h ../Core/Inc/MPC_PWM.h ../Core/Inc/MPC_feedback.h \
- ../Core/Inc/MPC_communication.h
+ ../Core/Inc/MPC_math.h ../Core/Inc/MPC_PWM.h
 
 ../Core/Inc/main.h:
 
@@ -103,7 +102,3 @@ Core/Src/MPC_core.o: ../Core/Src/MPC_core.c ../Core/Inc/main.h \
 ../Core/Inc/MPC_math.h:
 
 ../Core/Inc/MPC_PWM.h:
-
-../Core/Inc/MPC_feedback.h:
-
-../Core/Inc/MPC_communication.h:

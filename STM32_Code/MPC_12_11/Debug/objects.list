@@ -1,4 +1,8 @@
+"Core/Src/MPC_PWM.o"
+"Core/Src/MPC_communication.o"
 "Core/Src/MPC_core.o"
+"Core/Src/MPC_feedback.o"
+"Core/Src/MPC_math.o"
 "Core/Src/main.o"
 "Core/Src/stm32f3xx_hal_msp.o"
 "Core/Src/stm32f3xx_it.o"

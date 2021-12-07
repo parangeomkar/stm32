@@ -1,4 +1,5 @@
-MPC_feedback.c:11:6:computeSpeed	0	static
-MPC_feedback.c:33:6:computePosition	16	static
-MPC_feedback.c:59:6:measureADC	16	static
-MPC_feedback.c:83:6:computeSinCos	8	static
+MPC_feedback.c:12:6:computeSpeed	32	static
+MPC_feedback.c:30:6:computeAverageSpeed	0	static
+MPC_feedback.c:54:6:computePosition	8	static
+MPC_feedback.c:74:6:measureADC	16	static
+MPC_feedback.c:98:6:computeSinCos	8	static

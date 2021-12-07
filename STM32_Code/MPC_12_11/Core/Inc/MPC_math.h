@@ -15,6 +15,7 @@
 	};
 
 	short sin000,sin120,sin240,cos000,cos120,cos240,id_pred,iq_pred;
+	extern uint16_t tempTheta;
 
 
 	/**

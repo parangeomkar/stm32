@@ -24,8 +24,8 @@ void SVPWM(){
 	if(run == 1){
 		n = ((uint8_t)(wt/60))+1;
 
-		T1 = (uint16_t)(V*sin2(n*60 - wt)/1000);
-		T2 = (uint16_t)(V*sin2(wt - ((n-1)*60))/1000);
+		T1 = (uint16_t)(V*sin2(n*60 - wt)/1200);
+		T2 = (uint16_t)(V*sin2(wt - ((n-1)*60))/1200);
 		T0 = Ts - (T1+T2) + 5;
 
 

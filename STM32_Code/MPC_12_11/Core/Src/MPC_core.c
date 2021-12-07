@@ -14,30 +14,10 @@ int states[6] = {1,3,2,6,4,5};
 float Vdc = 12;
 
 float Iterm = 0;
-short iqRef = 0;
+float iqRef = 0;
 
-/**
- * This function implements Speed PI controller
- *
- */
-void PIController(){
-	error = 500 - speed;
-	Kterm = error;
-	Iterm += (float)error/10000; // error*Kp*Ts => error*2*0.0001 => error/5000
+uint16_t cnts = 0;
 
-	if(Iterm > 100){
-		Iterm = 100;
-	} else if(Iterm < -100){
-		Iterm = -100;
-	}
-	iqRef = (Kterm+Iterm);
-
-	if(iqRef>500){
-		iqRef = 500;
-	} else if(Iterm < -500){
-		Iterm = -500;
-	}
-}
 
 
 
@@ -62,21 +42,50 @@ void sixStepControl(){
 }
 
 
+/**
+ * This function implements Speed PI controller
+ *
+ */
+void PIController(){
+	error = 100 - speed;
+
+	if(error > -1500 && error < 1500){
+		Kterm = error/10;
+//		Iterm += (float)error*700/(256*10000); // error*Kp*Ts => error*2*0.0001 => error/5000
+//
+//		if(Iterm > 100){
+//			Iterm = 100;
+//		} else if(Iterm < -100){
+//			Iterm = -100;
+//		}
+
+		iqRef = (Kterm+0)/100;
+
+//		if(iqRef>500){
+//			iqRef = 500;
+//		} else if(iqRef < -500){
+//			iqRef = -500;
+//		}
+	}
+}
+
 
 /**
  * This function implements model predictive control (MPC)
  *
  */
+uint16_t penalty = 0;
+uint16_t F = 1000;
 void modelPredictiveControl(){
 	computeSinCos();
 
 	parkTransform(Ia,Ib,Ic,&Idq);
 	parkTransform(Ea,Eb,Ec,&Edq);
 
-	Idq.d = Idq.d/1241; // 3.3/4096 = 1/1241
-	Idq.q = Idq.q/1241;
+	Idq.d = Idq.d*10/4096;
+	Idq.q = Idq.q*10/4096;
 
-	Edq.d = Edq.d/1241; // 3.3/4096 = 1/1241
+	Edq.d = Edq.d/1241;
 	Edq.q = Edq.q/1241;
 
 	cost = 100000;
@@ -87,31 +96,29 @@ void modelPredictiveControl(){
 		Vc = (states[i]>>2) & 0x01;
 		parkTransform(Va,Vb,Vc,&Vdq);
 
-		for(j=1;j<3;j++){
-			IdPred = (float)((5/j)*Vdq.d + 2*Idq.d - Edq.d);
-			IqPred = (float)((5/j)*Vdq.q + 2*Idq.q - Edq.q);
+		IdPred = (float)((3*Vdq.d) + 2*Idq.d - Edq.d)*1000/2375; // 1/(R*Ts+L) = 1/2.375
+		IqPred = (float)((3*Vdq.q) + 2*Idq.q - Edq.q)*1000/2375;
 
-			costTemp = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(iqRef - (short)(IqPred*1000))))/1000000;
+//			IdPred = (8125*Idq.d/10000) + (speed*4*Idq.q/F) + (5*Vdq.d/2);
+//			IqPred = (8125*Idq.q/10000) - (speed*4*Idq.d/F) + (5*Vdq.q/2) - (6*speed*4/(1000*F));
 
-			if(costTemp < cost){
-				optimalVector = i;
-				optimalDuty = j;
-				cost = costTemp;
-			}
+		if(IdPred > 0.6 || IqPred > 0.6 || IdPred < -0.6 || IqPred < -0.6 ){
+			penalty = 10000;
+		} else {
+			penalty = 0;
+		}
+
+		costTemp = penalty + (square(mod(IdPred)) + 2*square(mod(0.2 - IqPred)));
+
+		if(costTemp < cost){
+			optimalVector = i;
+			cost = costTemp;
 		}
 	}
 
-	if(optimalDuty == 2){
-		V = 300;
-//	}else if(optimalDuty == 3){
-//		V = 200;
-//	} else if(optimalDuty == 4){
-//		V = 150;
-	} else {
-		V = 600;
-	}
+	V = 300;
 
-	wt = limitTheta((optimalVector+1)*60);
+	wt = (optimalVector+1)*60;
 	if(wt >= 360){
 		wt = 0;
 	}
@@ -134,21 +141,27 @@ void startStop(){
  * This function controls the execution and ADC measurement
  *
  */
-uint16_t executionCount, cnts = 0;
+uint16_t asd =0;
+uint8_t p = 1;
 void executeAll(){
 	measureADC();
 	if(run){
-		if(executionCount > 50000){
-			if(cnts == 100){
-				modelPredictiveControl();
-				cnts = 0;
-			} else {
-				cnts++;
-			}
+		if(executionCount > 15000 && p<2){
+			sixStepControl();
 		} else {
 			openLoopControl();
+//		}
+//			if(cnts == p){
+//				modelPredictiveControl();
+//				cnts = 0;
+//			} else {
+//				cnts++;
+//			}
+//		} else {
 			executionCount++;
+//		}
 		}
 	}
 	SVPWM();
+	transferUART();
 }

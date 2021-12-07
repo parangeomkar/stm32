@@ -1,6 +1,25 @@
 #include "main.h"
 #include "MPC_math.h"
+#include "MPC_core.h"
 #include "MPC_feedback.h"
+
+
+/**
+ * This function computes instantaneous rotor speed
+ *
+ *	******** Needs Fix ***********
+ */
+void computeSpeed(){
+	dTheta = tempTheta - thetaOld;
+
+	if(dTheta > 0 && dTheta < 10){
+		speed = (0.999*speed + (dTheta*1250/3000));
+		PIController();
+	}
+
+	thetaOld = tempTheta;
+}
+
 
 
 /**
@@ -8,21 +27,23 @@
  *
  */
 uint16_t clockTicks = 1;
-void computeSpeed(){
+void computeAverageSpeed(){
 	dTheta = thetaOld - theta;
 
+	speed = theta;
 	// check if angle roll over has occurred
-	if(dTheta > 250){
-		if(clockTicks > 0){
-			speed = 150000/clockTicks; 	// speed = 60/(Ts*p*clockTicks) = 150000/clockTicks --> p = 4 || Ts = 1 clockTick = 100uS
-		}
-		clockTicks = 0;
-		PIController();
-	} else {
-		clockTicks++;
-	}
-}
+//	if(dTheta > 200){
+//		if(clockTicks > 0){
+//			speed = theta; 	// speed = 60/(Ts*p*clockTicks) = 150000/clockTicks --> p = 4 || Ts = 1 clockTick = 100uS
+//			//PIController();
+//		}
+//		clockTicks = 0;
+//	} else {
+//		clockTicks++;
+//	}
 
+	thetaOld = theta;
+}
 
 /**
  * This function computes rotor position
@@ -42,14 +63,8 @@ void computePosition(){
 		theta += 360;
 	}
 
-	if(theta > 360){
-		theta = thetaOld;
-	}
-
 	// Compute rotor speed
-	computeSpeed();
-
-	thetaOld = theta;
+	computeAverageSpeed();
 }
 
 /**
@@ -61,14 +76,14 @@ void measureADC(){
 	HAL_ADC_Start_DMA(&hadc1, Iab, 2);
 
 	// Compute abc currents
-	Ia = ((short)Iab[0] - 1945);
-	Ib = ((short)Iab[1] - 1923);
+	Ia = ((short)Iab[0] - 1950);
+	Ib = ((short)Iab[1] - 1916);
 	Ic = -(Ia+Ib);
 
 
 	// Compute abc BEMFs
-	Ea = ((short)Eab[0]-1885);
-	Eb =  (short)Eab[1]-1745;
+	Ea = ((short)Eab[0]-1880);
+	Eb =  (short)Eab[1]-1743;
 	Ec = -(Ea+Eb);
 
 	// Compute rotor position

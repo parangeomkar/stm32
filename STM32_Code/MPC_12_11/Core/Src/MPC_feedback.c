@@ -61,13 +61,13 @@ void measureADC(){
 	HAL_ADC_Start_DMA(&hadc1, Iab, 2);
 
 	// Compute abc currents
-	Ia = ((short)Iab[0] - 1945);
+	Ia = ((short)Iab[0] - 1945)*95/100;
 	Ib = ((short)Iab[1] - 1923);
 	Ic = -(Ia+Ib);
 
 
 	// Compute abc BEMFs
-	Ea = ((short)Eab[0]-1885);
+	Ea = ((short)Eab[0]-1885)*9/10;
 	Eb =  (short)Eab[1]-1745;
 	Ec = -(Ea+Eb);
 

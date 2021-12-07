@@ -1,6 +1,6 @@
-MPC_core.c:23:6:PIController	0	static
-MPC_core.c:48:6:openLoopControl	0	static
-MPC_core.c:60:6:sixStepControl	0	static
-MPC_core.c:70:6:modelPredictiveControl	48	static
-MPC_core.c:125:6:startStop	0	static
-MPC_core.c:138:6:executeAll	8	static
+MPC_core.c:24:6:PIController	8	static
+MPC_core.c:49:6:openLoopControl	0	static
+MPC_core.c:61:6:sixStepControl	8	static
+MPC_core.c:71:6:modelPredictiveControl	64	static
+MPC_core.c:120:6:startStop	0	static
+MPC_core.c:133:6:executeAll	8	static

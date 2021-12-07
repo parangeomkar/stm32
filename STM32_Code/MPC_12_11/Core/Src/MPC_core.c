@@ -1,4 +1,5 @@
 #include "main.h"
+#include "math.h"
 #include "MPC_core.h"
 #include "MPC_math.h"
 #include "MPC_PWM.h"
@@ -22,7 +23,7 @@ short iqRef = 0;
  */
 void PIController(){
 	error = 500 - speed;
-	Kterm = error;
+	Kterm = error*35/10;
 	Iterm += (float)error/10000; // error*Kp*Ts => error*2*0.0001 => error/5000
 
 	if(Iterm > 100){
@@ -58,7 +59,7 @@ void openLoopControl(){
  *
  */
 void sixStepControl(){
-	wt = (uint16_t)(60*(uint8_t)((theta)/60));
+	wt = 60*floor((theta)/60);
 }
 
 
@@ -73,8 +74,8 @@ void modelPredictiveControl(){
 	parkTransform(Ia,Ib,Ic,&Idq);
 	parkTransform(Ea,Eb,Ec,&Edq);
 
-	Idq.d = Idq.d/1241; // 3.3/4096 = 1/1241
-	Idq.q = Idq.q/1241;
+	Idq.d = Idq.d/4096; // 3.3/4096 = 1/1241
+	Idq.q = Idq.q/4096;
 
 	Edq.d = Edq.d/1241; // 3.3/4096 = 1/1241
 	Edq.q = Edq.q/1241;
@@ -87,29 +88,23 @@ void modelPredictiveControl(){
 		Vc = (states[i]>>2) & 0x01;
 		parkTransform(Va,Vb,Vc,&Vdq);
 
-		for(j=1;j<3;j++){
-			IdPred = (float)((5/j)*Vdq.d + 2*Idq.d - Edq.d);
-			IqPred = (float)((5/j)*Vdq.q + 2*Idq.q - Edq.q);
+		IdPred = (4*Vdq.d + 2*Idq.d - Edq.d);
+		IqPred = (4*Vdq.q + 2*Idq.q - Edq.q);
 
-			costTemp = ((float)square(mod((short)(IdPred*1000))) + (float)square(mod(iqRef - (short)(IqPred*1000))))/1000000;
+		for(j=0;j<3;j++){
+			IdPred = (4*Vdq.d + 2*IdPred - Edq.d);
+			IqPred = (4*Vdq.q + 2*IqPred - Edq.q);
+		}
 
-			if(costTemp < cost){
-				optimalVector = i;
-				optimalDuty = j;
-				cost = costTemp;
-			}
+		costTemp = (square(mod((IdPred*1000))) + 2*square(mod(800 - (IqPred*1000))))/1000000;
+
+		if(costTemp < cost){
+			optimalVector = i;
+			cost = costTemp;
 		}
 	}
 
-	if(optimalDuty == 2){
-		V = 300;
-//	}else if(optimalDuty == 3){
-//		V = 200;
-//	} else if(optimalDuty == 4){
-//		V = 150;
-	} else {
-		V = 600;
-	}
+	V = 400;
 
 	wt = limitTheta((optimalVector+1)*60);
 	if(wt >= 360){
@@ -138,17 +133,18 @@ uint16_t executionCount, cnts = 0;
 void executeAll(){
 	measureADC();
 	if(run){
-		if(executionCount > 50000){
-			if(cnts == 100){
+//		if(executionCount > 10000){
+			if(cnts == 50){
 				modelPredictiveControl();
 				cnts = 0;
 			} else {
 				cnts++;
 			}
-		} else {
-			openLoopControl();
-			executionCount++;
-		}
+//		} else {
+//			openLoopControl();
+//			executionCount++;
+//		}
 	}
 	SVPWM();
+//	transferUART();
 }

@@ -134,14 +134,14 @@ void executeAll(){
 	measureADC();
 	if(run){
 //		if(executionCount > 10000){
-			if(cnts == 50){
-				modelPredictiveControl();
-				cnts = 0;
-			} else {
-				cnts++;
-			}
+//			if(cnts == 50){
+//				modelPredictiveControl();
+//				cnts = 0;
+//			} else {
+//				cnts++;
+//			}
 //		} else {
-//			openLoopControl();
+			openLoopControl();
 //			executionCount++;
 //		}
 	}

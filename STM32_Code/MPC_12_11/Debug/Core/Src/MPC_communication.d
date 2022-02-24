@@ -11,7 +11,6 @@ Core/Src/MPC_communication.o: ../Core/Src/MPC_communication.c \
  ../Drivers/CMSIS/Include/cmsis_gcc.h \
  ../Drivers/CMSIS/Include/mpu_armv7.h \
  ../Drivers/CMSIS/Device/ST/STM32F3xx/Include/system_stm32f3xx.h \
- ../Drivers/STM32F3xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_rcc_ex.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_gpio.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_gpio_ex.h \
@@ -59,8 +58,6 @@ Core/Src/MPC_communication.o: ../Core/Src/MPC_communication.c \
 ../Drivers/CMSIS/Include/mpu_armv7.h:
 
 ../Drivers/CMSIS/Device/ST/STM32F3xx/Include/system_stm32f3xx.h:
-
-../Drivers/STM32F3xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h:
 
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_rcc_ex.h:
 

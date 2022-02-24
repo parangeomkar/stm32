@@ -10,7 +10,6 @@ from multiprocessing import Process
 import math
 import threading
 
-
 clear = lambda: os.system('cls')
 
 root = Tk()
@@ -64,62 +63,81 @@ t = []
 
 
 def getData():
-    global I_a, I_b, E_a, E_b,s1,s2,s3,s4,t
-    I_af = 0
-    I_bf = 0
-    E_af = 0
-    E_bf = 0
-    x = 0
-    a = 0.96
-    b = 1-a
-    
-    pi = 3.14159265359
-    angle = 0
-    wt = 0
-    V = 0.5*512
-    Ts = 512
-    p = 1
-    rxData = [255,0,0,0,0,0,0,0,0,0,0]
-    theta = 0   
-    p=0
     plt.close()
-    while(x==0):        
-        # if (sp.inWaiting() > 0):
-        rxData = list(sp.read(5))
-    # df = pd.DataFrame({"I_a" : np.array(rxData)})
-    # df.to_csv(csvFileName.get()+".csv", index=False, header=False)
-    # print("Done!!!")
-        for i in range(3):
-            if ((rxData[i] == 123)):
-                theta = (rxData[i+1] + 256*rxData[i+2])
-                # E_a = (rxData[i+3] + 256*rxData[i+4])
-                # E_b = (rxData[i+5] + 256*rxData[i+6])
-                
-                # E_alpha = 1.5*E_a
-                # E_beta = 0.866*(E_a - 2*E_b)
-                
-                # a = math.atan2(E_b,E_a)*57.29 + 180
-                
-                s1.append(theta)
-                s2.append(0)
-                s3.append(0)
-                t.append(p)
-                p+=1
-                if(len(s1) >= 15000):
-                    plt.plot(t, s1)
-                    plt.show()
-                    saveClick(s1,s2,s3,s4)
-                    s1 = []
-                    s2 = []
-                    s3 = []
-                    s4 = []
-                    t=[]
-                    x = 1
-                    p=0
-                    print(123)
-                break
+    s1 = []
+    s2 = []
+    s3 = []
+    s4 = []
+    s5 = []
+    t = []
+    tm = 0;
+    n = 30000
+    
+    print("Starting!")
+     
+    tx = [104,0,0];
+    sp.write(tx)
+    time.sleep(2)
+    
+    tx = [101,0,0];
+    sp.write(tx)
+    
+    rxData = list(sp.read(n))
+
+    print(rxData)
+
+    tx = [102,0,0];
+    sp.write(tx)
+    
+    tx = [103,0,0];
+    sp.write(tx)
+    
+    i = 0
+    inc = 4
+    theta_old = 0
+    speed = 0
+    told = 0
+    x = 1
+    pi = 3.14159265
+    for _ in range(int(n/4)):
+        if(len(rxData) >= i+inc-1):
+            Iq = (rxData[i] + 256*rxData[i+1] - 10000)#*pi/180
+            Id = (rxData[i+2] + 256*rxData[i+3] - 10000)
+            # theta = (rxData[i+4] + 256*rxData[i+5] - 10000)
+            # vec = rxData[i+6]
             
-        root.update()
+            i += inc
+            tm += 1/(20*1000)
+            
+            if(Iq != told):
+                if(Iq > told):
+                    temp = 0.98*speed + 0.02*(Iq - told)/(x * 0.00005)*60/(4*2*pi)
+                else:
+                    temp = 0.98*speed + 0.02*(360 + (Iq - told))/(x * 0.00005)*60/(4*2*pi)
+                
+                if(temp < 5000):
+                    speed = temp
+                told = Iq
+                x = 1
+            else:
+                x += 1
+            
+            s1.append(Id)
+            s2.append(Iq)
+            # s3.append(theta)
+            # s4.append(vec)
+            t.append(tm)
+
+    plt.plot(t, s1)
+    plt.plot(t, s2)
+    # plt.plot(t, s3)
+    # plt.plot(t, s4)
+    # plt.plot(t, s5)
+    plt.show()
+    saveClick(s1,s2,s3,s4)
+    print("Done!")
+        
+    root.update()
     
 def on_closing():
     plt.close()
@@ -137,7 +155,7 @@ def plot():
 
 
 def saveClick(s1,s2,s3,s4):
-    df = pd.DataFrame({"I_a" : np.array(s1), "I_b" : np.array(s2), "E_a" : np.array(s3)})#, "E_b" : s4
+    df = pd.DataFrame({"Id" : np.array(s1), "Iq" : np.array(s2), "Th" : np.array(s3), "wt" : s4})
     df.to_csv(csvFileName.get()+".csv", index=False, header=False)
 
 

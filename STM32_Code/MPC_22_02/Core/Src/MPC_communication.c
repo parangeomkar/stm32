@@ -6,7 +6,7 @@
 #include "MPC_communication.h"
 
 // Variables used by transferUART()
-uint8_t txData[4];
+uint8_t txData[6];
 uint8_t comCode[7],startTx;
 uint8_t c = 0;
 /**
@@ -15,14 +15,14 @@ uint8_t c = 0;
  */
 void transferUART(){
 	if(startTx){
-		txData[0] = ((int16_t)(Ia) + 10000) & 0xff;
-		txData[1] = (((int16_t)(Ia) + 10000) >> 8) & 0xff;
+		txData[0] = ((int16_t)(speed) + 10000) & 0xff;
+		txData[1] = (((int16_t)(speed) + 10000) >> 8) & 0xff;
 
-		txData[2] = ((int16_t)(Ib) + 10000) & 0xff;
-		txData[3] = (((int16_t)(Ib) + 10000) >> 8) & 0xff;
-
-//		txData[4] = ((int16_t)(thetaElec) + 10000) & 0xff;
-//		txData[5] = (((int16_t)(thetaElec) + 10000) >> 8) & 0xff;
+		txData[2] = ((int16_t)(IqTx) + 10000) & 0xff;
+		txData[3] = (((int16_t)(IqTx) + 10000) >> 8) & 0xff;
+//
+//		txData[4] = ((int16_t)(Ib) + 10000) & 0xff;
+//		txData[5] = (((int16_t)(Ib) + 10000) >> 8) & 0xff;
 //
 //		txData[6] = (optimalVector) & 0xff;
 

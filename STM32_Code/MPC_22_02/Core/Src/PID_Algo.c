@@ -16,10 +16,10 @@ int16_t Ki = 20;
 
 float Iterm = 0;
 void SpeedPIController(){
-	speedReq = 2000;
+	speedReq = 1000;
 	error = speedReq - speed;
-	Kterm = (float)(error)*0.002;
-	Iterm += (float)(error)*0.00001;
+	Kterm = (float)(error*2)/1000;
+	Iterm += (float)(error*2)/10000;
 
 	if(Iterm > 1){
 		Iterm = 1;

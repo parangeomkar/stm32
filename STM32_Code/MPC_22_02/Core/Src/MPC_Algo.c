@@ -20,8 +20,8 @@ void modelPredictiveControl(){
 
 	cost = 100000;
 
-	IdPredTemp = Idq.d/2900;
-	IqPredTemp = Idq.q/2900;
+	IdPredTemp = Idq.d/1230;
+	IqPredTemp = Idq.q/1230;
 
 	V = (Vbus/65);
 
@@ -40,22 +40,22 @@ void modelPredictiveControl(){
 
 //		for(j=0;j<1;j++){
 //		IdPred = (int)((8650*IdPredTemp) + (wr*IqPredTemp*2) + (1250*Vdq.d));
-		IqPred = ((0.90625*IqPredTemp) - (wr*IdPredTemp/20000) + (0.125*Vdq.q));
+		IqPred = (int)((9062*IqPredTemp) - (wr*IdPredTemp/2) + (1250*Vdq.q));
 
-		costTemp = sqr(mod((IqRef - IqPred)));
+		costTemp = sqr(mod((IqRef*10000 - IqPred)))/10000;
 //		}
 
 		if(costTemp < cost){
 			optimalVector = i;
 			cost = costTemp;
-			IqTx = IqPred*290;
+			IqTx = IqPred*1230;
 		}
 	}
 
 	if(optimalVector == 6){
 		V = 0;
 	} else {
-		V = 400;
+		V = 800;
 	}
 
 	wt = (optimalVector)*60;

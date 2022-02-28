@@ -32,28 +32,28 @@ void computePositionWithEncoder(){
 
 		x = 1;
 
-//		if(k>19){
-//			sum += (speedTemp - speedArr[e]);
-//			speedArr[e] = speedTemp;
-//			e++;
-//
-//			if(e>19){
-//				e = 0;
-//			}
-//		} else {
-//			sum += speedTemp;
-//			speedArr[k] = speedTemp;
-//			k++;
-//		}
+		if(k>9){
+			sum += (speedTemp - speedArr[e]);
+			speedArr[e] = speedTemp;
+			e++;
 
-		speed = (98*speed + speedTemp)/100;
+			if(e>9){
+				e = 0;
+			}
+		} else {
+			sum += speedTemp;
+			speedArr[k] = speedTemp;
+			k++;
+		}
+
+		speed = sum/10;
 		wr = (float)speed*1047/10000;
 
-		if(j>9){
+//		if(j>9){
 			SpeedPIController();
-		} else {
-			j++;
-		}
+//		} else {
+//			j++;
+//		}
 
 	} else {
 		x++;
@@ -70,9 +70,9 @@ void measureADC(){
 	HAL_ADC_Start_DMA(&hadc1, Iabc, 4);
 
 	// Compute abc currents
-	Ia = -(((int16_t)Iabc[0] - 1951));
-	Ib = -((int16_t)Iabc[1] - 1924);
-	Ic = -((int16_t)Iabc[2] - 1955);
+	Ia = -(((int16_t)Iabc[0])-1956)*103/100;
+	Ib = -((int16_t)Iabc[1]-1916);
+	Ic = -((int16_t)Iabc[2]-1955);
 	Vbus = ((int16_t)Iabc[3]) + 1;
 
 	// Compute rotor position

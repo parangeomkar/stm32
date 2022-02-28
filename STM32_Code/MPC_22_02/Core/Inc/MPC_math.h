@@ -34,6 +34,13 @@
 	 */
 	short sin2(short thetaElec);
 
+	/**
+	 * This function computes sin(thetaElec) for SVPWM
+	 *
+	 * @param short thetaElec in degrees
+	 * @return short sin(x) range -512 to +512
+	 */
+	short sinLowRes(short thetaElec);
 
 	/**
 	 * This function computes cos(thetaElec) using LUT

@@ -53,13 +53,6 @@
 	void measureADC();
 
 
-	/**
-	 * This function implements Flux + Theta + Torque observer
-	 *
-	 */
-	void fluxObserver();
-
-
 
 	void SpeedPIController();
 #endif

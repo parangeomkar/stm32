@@ -45,14 +45,11 @@ void startStop(){
 
 void testSVPWM(){
 	V += 1;
-	if(V>400){
-		V = 200;
+	if(V > 300){
+		V = 0;
 	}
 
-	wt = 0;
-	if(wt >= 360){
-		wt = 0;
-	}
+	wt = 240;
 }
 
 

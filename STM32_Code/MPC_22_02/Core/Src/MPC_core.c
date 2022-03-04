@@ -5,9 +5,6 @@
 #include "MPC_feedback.h"
 #include "MPC_communication.h"
 
-// Variables used by executeSetAlgorithm()
-uint8_t isOpenLoopComplete = 0;
-
 
 /**
  * This function controls initial position of motor
@@ -31,16 +28,20 @@ void initalPositionSet(){
 
 
 /**
- * This function controls start/stop of motor with Blue button
+ * This function controls starting of motor with Blue button
  *
  */
-void startStop(){
-	if(!run){
-		run = 1;
-	} else {
-		run = 0;
-		cnts = 0;
-	}
+void startMotor(){
+	run = 1;
+}
+
+
+/**
+ * This function controls stopping of motor with Blue button
+ *
+ */
+void stopMotor(){
+	run = 0;
 }
 
 void testSVPWM(){
@@ -70,20 +71,14 @@ void executeAll(){
 			cnts++;
 			V = 0;
 		} else {
-//			testSVPWM();
+			V = 850;
 			modelPredictiveControl();
-//			if(ex > 0){
-//				V = 300;
-//				openLoopControl();
-//				ex = 0;
-//			} else {
-//				ex++;
-//			}
 		}
+
+		transferUART();
 	} else {
 		V = 0;
 	}
 	SVPWM();
-	transferUART();
 	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 }

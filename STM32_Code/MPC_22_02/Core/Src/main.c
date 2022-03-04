@@ -205,7 +205,7 @@ static void MX_NVIC_Init(void)
   HAL_NVIC_SetPriority(TIM1_CC_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(TIM1_CC_IRQn);
   /* DMA1_Channel6_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(DMA1_Channel6_IRQn, 1, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel6_IRQn);
 }
 
@@ -380,7 +380,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 24;
+  htim1.Init.Prescaler = 30;
   htim1.Init.CounterMode = TIM_COUNTERMODE_CENTERALIGNED1;
   htim1.Init.Period = 72;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -477,7 +477,7 @@ static void MX_TIM3_Init(void)
   htim3.Init.Period = 299;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI2;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
   sConfig.IC1Polarity = TIM_ICPOLARITY_FALLING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;

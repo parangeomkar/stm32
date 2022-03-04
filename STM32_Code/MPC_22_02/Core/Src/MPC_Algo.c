@@ -23,16 +23,16 @@ void modelPredictiveControl(){
 	IdPredTemp = Idq.d/1230;
 	IqPredTemp = Idq.q/1230;
 
-	V = (Vbus/65);
+//	V = (Vbus/65);
 
 	for(i=0;i<6;i++){
 		Sa = states[i] & 0x01;
 		Sb = (states[i]>>1) & 0x01;
 		Sc = (states[i]>>2) & 0x01;
 
-	    Va = V*((2*Sa-Sb-Sc))/3;
-	    Vb = V*((2*Sb-Sa-Sc))/3;
-	    Vc = V*((2*Sc-Sb-Sa))/3;
+	    Va = 8*((2*Sa-Sb-Sc))/3;
+	    Vb = 8*((2*Sb-Sa-Sc))/3;
+	    Vc = 8*((2*Sc-Sb-Sa))/3;
 
 		parkTransform(Va,Vb,Vc,&Vdq);
 
@@ -42,7 +42,7 @@ void modelPredictiveControl(){
 //		IdPred = (int)((8650*IdPredTemp) + (wr*IqPredTemp*2) + (1250*Vdq.d));
 		IqPred = (int)((9062*IqPredTemp) - (wr*IdPredTemp/2) + (1250*Vdq.q));
 
-		costTemp = sqr(mod((IqRef*10000 - IqPred)))/10000;
+		costTemp = sqr(mod((IqRef - IqPred)))/10000;
 //		}
 
 		if(costTemp < cost){
@@ -52,11 +52,6 @@ void modelPredictiveControl(){
 		}
 	}
 
-	if(optimalVector == 6){
-		V = 0;
-	} else {
-		V = 800;
-	}
 
 	wt = (optimalVector)*60;
 	if(wt >= 360){

@@ -15,7 +15,7 @@ uint16_t wt = 0;
 uint8_t n = 0;
 uint8_t run = 1;
 
-uint16_t V = 200;
+uint16_t V = 300;
 uint16_t xxx = 0;
 /**
  * This function computes SVPWM timings for TIM1

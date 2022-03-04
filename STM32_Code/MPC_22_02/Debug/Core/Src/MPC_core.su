@@ -1,4 +1,5 @@
-MPC_core.c:18:6:initalPositionSet	16	static
-MPC_core.c:37:6:startStop	0	static
-MPC_core.c:46:6:testSVPWM	0	static
-MPC_core.c:61:6:executeAll	24	static
+MPC_core.c:15:6:initalPositionSet	16	static
+MPC_core.c:34:6:startMotor	0	static
+MPC_core.c:43:6:stopMotor	0	static
+MPC_core.c:47:6:testSVPWM	0	static
+MPC_core.c:62:6:executeAll	24	static

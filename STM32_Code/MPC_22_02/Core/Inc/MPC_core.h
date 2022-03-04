@@ -6,7 +6,7 @@
 
 	float IalphaPred,IbetaPred,IdPredTemp,IqPredTemp,IdPred,IqPred,IqTx;
 	int costTemp,cost;
-	uint8_t optimalVector,optimalDuty;
+	uint8_t optimalVector,optimalDuty,startOCwatch;
 	int16_t polePairs;
 
 
@@ -36,6 +36,17 @@
 	 */
 	void sixStepControl();
 
+	/**
+	 * This function controls starting of motor with Blue button
+	 *
+	 */
+	void startMotor();
+
+	/**
+	 * This function controls stopping of motor with Blue button
+	 *
+	 */
+	void stopMotor();
 
 	/**
 	 * This function implements open loop control

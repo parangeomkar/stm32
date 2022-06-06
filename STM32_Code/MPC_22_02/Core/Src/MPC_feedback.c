@@ -45,7 +45,9 @@ void computePositionWithEncoder(){
 			k++;
 		}
 
-		speed = (2*speed + sum/10)/3;
+		speed = (19*speed + sum/10)/20;
+//		speed = (95*speed + 5*speedTemp)/100;
+
 		wr = (float)speed*1047/10000;
 
 		if(speedPIrate>9){
@@ -83,5 +85,4 @@ void measureADC(){
 
 	// Compute rotor position
 	computePositionWithEncoder();
-//	fluxObserver();
 }

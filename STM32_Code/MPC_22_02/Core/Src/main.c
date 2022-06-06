@@ -33,6 +33,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 void receiveUART();
+void initModelPredictiveControl();
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -116,9 +117,11 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
 
+	initModelPredictiveControl();
+
+
 	// Calibrate ADCs
 		HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
-	//	HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
 
 		// Enable MOSFET drivers
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_10, 1);

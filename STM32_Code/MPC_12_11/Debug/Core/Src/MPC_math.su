@@ -1,8 +1,0 @@
-MPC_math.c:22:7:limitTheta	0	static
-MPC_math.c:37:7:sin2	0	static
-MPC_math.c:58:7:cos2	0	static
-MPC_math.c:69:9:asin2	0	static
-MPC_math.c:81:10:arctan2	16	static
-MPC_math.c:107:6:parkTransform	16	static
-MPC_math.c:116:6:inverseParkTransform	0	static
-MPC_math.c:126:6:clarkeTransform	0	static

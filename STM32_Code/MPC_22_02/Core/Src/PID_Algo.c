@@ -11,27 +11,27 @@
  * This function implements Speed PI controller
  *
  */
-int16_t Kp = 512;
-int16_t Ki = 512;
 
 float Iterm = 0;
 int16_t speedReq = 1500;
 void SpeedPIController(){
+	float Kp = 10;
+	float Ki = 0.1;
 	error = speedReq - speed;
-	Kterm = (float)(error*Kp)/256;
-	Iterm += (float)(error*Ki)/2560;
+	Kterm = (float)(error)*Kp;
+	Iterm += (float)(error)*Ki;
 
-	if(Iterm > 10000){
-		Iterm = 10000;
-	} else if(Iterm < -10000){
-		Iterm = -10000;
+	if(Iterm > 3250){
+		Iterm = 3250;
+	} else if(Iterm < -3250){
+		Iterm = -3250;
 	}
 
 	IqRef = (int16_t)(Kterm+Iterm);
 
-	if(IqRef > 20000){
-		IqRef = 20000;
-	} else if(IqRef < -20000){
-		IqRef = -20000;
+	if(IqRef > 4500){
+		IqRef = 4500;
+	} else if(IqRef < -4500){
+		IqRef = -4500;
 	}
 }

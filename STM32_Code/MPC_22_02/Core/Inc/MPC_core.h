@@ -4,12 +4,13 @@
 
 	int i,j;
 
-	float IalphaPred,IbetaPred,IdPredTemp,IqPredTemp,IdPred,IqPred,IqTx;
-	int costTemp,cost;
+	float IalphaPred,IbetaPred,IdTemp,IqTemp,IdPred,IqPred,IqTx;
+	int costTemp,cost,C1,C2;
 	uint8_t optimalVector,optimalDuty,startOCwatch;
 	int16_t polePairs;
+	uint8_t Sa,Sb,Sc;
 
-
+	float Varray[7][3];
 	int16_t error;
 	float Kterm;
 	float Iterm;
@@ -23,6 +24,11 @@
 	 */
 	void SpeedPIController();
 
+	/**
+	 * This function initializes model predictive control variables
+	 *
+	 */
+	void initModelPredictiveControl();
 
 	/**
 	 * This function implements model predictive control (MPC)

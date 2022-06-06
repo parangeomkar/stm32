@@ -17,13 +17,13 @@ int16_t arr[10000], idx;
 uint32_t err,asdsda;
 void transferUART(){
 	if(startTx){
-			txData[0] = (speed + 10000) & 0xff;
-			txData[1] = ((speed + 10000) >> 8) & 0xff;
+			txData[0] = ((uint16_t)(speed + 30000)) & 0xff;
+			txData[1] = (((uint16_t)(speed + 30000)) >> 8) & 0xff;
 			HAL_UART_Transmit(&huart2, txData,2,10);
-			asdsda++;
-			if(asdsda > 5000){
-				speedReq = 1500;
-			}
+//			asdsda++;
+//			if(asdsda > 5000){
+//				speedReq = 1500;
+//			}
 //		err += error;
 //		if(testEnd){
 //			txData[0] = (err) & 0xff;

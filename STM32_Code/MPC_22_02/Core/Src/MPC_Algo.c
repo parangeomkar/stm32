@@ -11,44 +11,56 @@
  * This function implements model predictive control (MPC)
  *
  */
-uint8_t Sa,Sb,Sc;
+
 int states[7] = {1,3,2,6,4,5,0};
-
-void modelPredictiveControl(){
-	computeSinCos();
-	parkTransform(Ia,Ib,Ic,&Idq);
-
-	cost = 100000;
-
-	IdPredTemp = Idq.d/1230;
-	IqPredTemp = Idq.q/1230;
-
-//	V = (Vbus/65);
+void initModelPredictiveControl(){
+	C1 = 10000*(1 - (0.75/(16130*0.0004)));
+	C2 = 10000*(1/(16130*0.0004));
 
 	for(i=0;i<6;i++){
 		Sa = states[i] & 0x01;
 		Sb = (states[i]>>1) & 0x01;
 		Sc = (states[i]>>2) & 0x01;
 
-	    Va = 8*((2*Sa-Sb-Sc))/3;
-	    Vb = 8*((2*Sb-Sa-Sc))/3;
-	    Vc = 8*((2*Sc-Sb-Sa))/3;
+		Varray[i][0] = (V/100)*((2*Sa-Sb-Sc))/3;
+		Varray[i][1] = (V/100)*((2*Sb-Sa-Sc))/3;
+		Varray[i][2] = (V/100)*((2*Sc-Sb-Sa))/3;
+	}
+}
+
+int16_t lambda1 = 10;
+void modelPredictiveControl(){
+	computeSinCos();
+	parkTransform(Ia,Ib,Ic,&Idq);
+
+	IdTemp = Idq.d/1230;
+	IqTemp = Idq.q/1230;
+
+	cost = 100000;
+
+
+//	V = (Vbus/65);
+
+	for(i=0;i<6;i++){
+		Va = Varray[i][0];
+		Vb = Varray[i][1];
+		Vc = Varray[i][2];
 
 		parkTransform(Va,Vb,Vc,&Vdq);
 
 		costTemp = 0;
 
-//		for(j=0;j<1;j++){
-//		IdPred = (int)((8650*IdPredTemp) + (wr*IqPredTemp*2) + (1250*Vdq.d));
-		IqPred = (int)((9062*IqPredTemp) - (wr*IdPredTemp/2) + (1250*Vdq.q));
+		for(j=0;j<1;j++){
+			IdPred = (int)((C1*IdTemp) + (wr*IqTemp/2) + (C2*Vdq.d));
+			IqPred = (int)((C1*IqTemp) - (wr*IdTemp/2) + (C2*Vdq.q));
 
-		costTemp = sqr(mod((IqRef - IqPred)))/10000;
-//		}
+			costTemp = lambda1*sqr(mod(IdPred))/100000 + sqr(mod((IqRef - IqPred)))/10000;
+		}
 
 		if(costTemp < cost){
 			optimalVector = i;
 			cost = costTemp;
-			IqTx = IqPred*1230;
+			IqTx = IqPred*123/1000;
 		}
 	}
 

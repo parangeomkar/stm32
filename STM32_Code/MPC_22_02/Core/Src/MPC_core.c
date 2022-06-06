@@ -33,6 +33,8 @@ void initalPositionSet(){
  */
 void startMotor(){
 	run = 1;
+	Iterm = 0;
+	sum = 0;
 }
 
 
@@ -71,7 +73,7 @@ void executeAll(){
 			cnts++;
 			V = 0;
 		} else {
-			V = 850;
+			V = 1000;
 			modelPredictiveControl();
 		}
 
